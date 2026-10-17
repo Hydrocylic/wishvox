@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>harness · 关键块预览 + 每工具笔刷尺寸读回（r05 · REQ-063 / REQ-064）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #171a1f; color: #dfe4ea; margin: 0; padding: 16px; }
+      h1, h2 { font-size: 18px; }
+      table { border-collapse: collapse; margin: 8px 0; }
+      td, th { border: 1px solid #333a42; padding: 4px 10px; text-align: left; font-size: 13px; }
+      .pass { color: #7fd88f; font-weight: 600; }
+      .fail { color: #ff8a8a; font-weight: 600; }
+      #stage { width: 900px; height: 420px; border: 1px solid #333a42; background: #14161a; }
+      pre { background: #101317; padding: 10px; white-space: pre-wrap; font-size: 12px; }
+      button { font-size: 15px; padding: 8px 24px; }
+      p.note { color: #8a929c; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>harness · 关键块预览 + 每工具笔刷尺寸读回（r05 · `REQ-063` / `REQ-064`）</h1>
+    <p class="note">
+      **左侧真视口**（真 `VoxelView` + WebGL，与产品同一条链路）；判据全部走**读回面**，不靠肉眼：
+      `REQ-063` = `VoxelRenderer#getPreviewCells` / `#getPreviewKeyCells` / `#previewMeshCounts`（附属 / 关键两组实例数）
+      ⇒ `2×2×2` 恰 **1 格关键**、其余附属 · `1×1×1` 关键 1 / 附属 0 · 过滤后关键 ≤1 · 检视态双 0 ·
+      **预览集合 = 笔刷体积 ∩ 既有谓词（`REQ-055` 不动项）**；
+      `REQ-064` = `state/editor-store` 的 `brushSizes`（按工具）+ 镜像 `brushSize` + 笔刷一笔补丁的 `op.size`
+      ⇒ 三工具来回切换各自保持 · 预览与补丁同源 · 初值 `{1,1,1}` · 每轴 1–8 报错不变 · 不进项目文件。
+    </p>
+    <div id="stage"></div>
+    <p><button id="run">运行全部检查</button> <span id="progress"></span></p>
+    <table id="result"></table>
+    <pre id="raw"></pre>
+    <script type="module" src="./preview-key-tool-size.ts"></script>
+  </body>
+</html>

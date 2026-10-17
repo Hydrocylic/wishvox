@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>harness · 编辑系统视口读回（r02 前半 V1/V3/V4/V5/V6/V8/V10/V11）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #171a1f; color: #dfe4ea; margin: 0; padding: 16px; }
+      h1, h2 { font-size: 18px; }
+      table { border-collapse: collapse; margin: 8px 0; }
+      td, th { border: 1px solid #333a42; padding: 4px 10px; text-align: left; font-size: 13px; }
+      .pass { color: #7fd88f; font-weight: 600; }
+      .fail { color: #ff8a8a; font-weight: 600; }
+      #stage { width: 1024px; height: 576px; border: 1px solid #333a42; background: #14161a; }
+      pre { background: #101317; padding: 10px; white-space: pre-wrap; font-size: 12px; }
+      button { font-size: 15px; padding: 8px 24px; }
+      p.note { color: #8a929c; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>harness · 编辑系统视口读回（r02 前半 F1–F10 的 L3 面）</h1>
+    <p class="note">
+      判据 = <code>editing-system-plan.md</code> §4 的 V1 / V3 / V4 / V5 / V6 / V8 / V10 / V11：
+      目标点 = 非空块 AABB 中心（拖动中冻结）· 可见块数 = 按层计数 · 网格对象数 · 预览集合 = 笔刷体积 ·
+      一次撤销的块数 · 检视态门 · 相机会话态（不进项目文件；撤销不回退视图）。
+      观感类（旋转手感 / 缩放速度分档）不设数值门槛 ⇒ 人工走查（MT-E）。
+    </p>
+    <div id="stage"></div>
+    <p><button id="run">运行全部检查</button> <span id="progress"></span></p>
+    <table id="result"></table>
+    <pre id="raw"></pre>
+    <script type="module" src="./editing-view.ts"></script>
+  </body>
+</html>

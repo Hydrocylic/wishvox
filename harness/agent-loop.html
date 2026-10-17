@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>harness · AI 会话链路读回（r03 工具式增量编辑）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #171a1f; color: #dfe4ea; margin: 0; padding: 16px; }
+      h1, h2 { font-size: 18px; }
+      table { border-collapse: collapse; margin: 8px 0; }
+      td, th { border: 1px solid #333a42; padding: 4px 10px; text-align: left; font-size: 13px; }
+      .pass { color: #7fd88f; font-weight: 600; }
+      .fail { color: #ff8a8a; font-weight: 600; }
+      pre { background: #101317; padding: 10px; white-space: pre-wrap; font-size: 12px; }
+      button { font-size: 15px; padding: 8px 24px; }
+      p.note { color: #8a929c; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>harness · AI 会话链路读回（r03 agent-edit 的 L3/L4 面）</h1>
+    <p class="note">
+      判据 = <code>agent-edit-plan.md</code> §5 的 <code>V1</code>（主链路）/ <code>V3</code>（闸门对账）/ <code>V4</code>（刷新续跑）/
+      <code>V2</code>（容错 + 一键重试）：全部走**脚本化 provider**（线级 SSE 注入，不打真网、不需要 key）。
+      真实 provider 的延迟自证（<code>V10</code>）与 BYOK 存储读回（<code>V5</code>）归用户人工面（<code>MT</code>）。
+      刷新续跑的"重载"以**同 store 新建 AgentSession** 模拟（浏览器整页刷新会连脚本态一起销毁，无法自证）。
+    </p>
+    <p><button id="run">运行全部检查</button> <span id="progress"></span></p>
+    <table id="result"></table>
+    <pre id="raw"></pre>
+    <script type="module" src="./agent-loop.ts"></script>
+  </body>
+</html>

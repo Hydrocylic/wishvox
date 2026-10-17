@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>harness · 帧率门槛（I8 · NFR-001/002）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #171a1f; color: #dfe4ea; margin: 0; padding: 16px; }
+      h1, h2 { font-size: 18px; }
+      table { border-collapse: collapse; margin: 8px 0; }
+      td, th { border: 1px solid #333a42; padding: 4px 10px; text-align: left; font-size: 13px; }
+      .pass { color: #7fd88f; font-weight: 600; }
+      .fail { color: #ff8a8a; font-weight: 600; }
+      #stage { width: 1280px; height: 720px; border: 1px solid #333a42; background: #14161a; }
+      pre { background: #101317; padding: 10px; white-space: pre-wrap; font-size: 12px; }
+      button { font-size: 15px; padding: 8px 24px; }
+      p.note { color: #8a929c; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>harness · 帧率门槛（I8 · NFR-001 帧率 + NFR-002 交互延迟）</h1>
+    <p class="note">
+      采集协议 = 笔记库 <code>curriculum/r01-voxel-core/voxel-core-plan.md</code> §7（S* = 20 000 非空方块 ·
+      30 s 窗口 · 前 2 s 排除 · hidden/blur 排除 · &gt;250 ms 长帧计入并计 hitch）；判据目录 =
+      <code>curriculum/testing-plan.md</code>。<strong>正式采集须独占机器、由用户执行。</strong>
+    </p>
+    <div id="stage"></div>
+    <h2>preflight（四层自检，任一 FAIL 即不产出数据）</h2>
+    <table id="preflight"></table>
+    <h2>运行</h2>
+    <p><button id="run" disabled>开始 31 s 采集（前 2 s 为 warm-up 不计入）</button> <span id="progress"></span></p>
+    <h2>结果</h2>
+    <table id="result"></table>
+    <pre id="raw"></pre>
+    <script type="module" src="./frame-rate.ts"></script>
+  </body>
+</html>

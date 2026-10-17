@@ -1,0 +1,28 @@
+# Third-Party Notices
+
+本仓库含以下第三方来源的代码片段：
+
+## PetitMaker
+
+- 来源：https://github.com/Stry233/PetitMaker.git（内部参考仓 `reference/PetitMaker`，pin `4e120e5`）
+- 许可：Apache License 2.0（上游 `LICENSE`；`NOTICE` = "PetitMaker（谷地工坊）/ Copyright 2026
+  PetitMaker contributors"）
+- 取用物：`src/__tests__/import-direction.test.ts` 的**测试结构**（LAYERS rank 表 + ALLOWED_UPWARD
+  形态 + type-only 豁免 + import 提取正则），经大幅修改落为本仓 `tests/structure.test.ts`
+  （新增：Tarjan 无环判定、≤400 行规则、无 ai→ui、组合根词法、render 只管画）。
+- 标注：`tests/structure.test.ts` 文件头保留 "modified from PetitMaker (Apache-2.0, pin 4e120e5)"。
+- 红线：未取任何素材 / 品牌 / 美术 / 地图数据（All Rights Reserved）。
+- P6 公开前义务：随仓附上游 `LICENSE` 全文与 `NOTICE`（见笔记库 `discussions/open-items.md` §5.1）。
+
+## Upstream NOTICE: PetitMaker
+
+PetitMaker (�ȵع���)
+Copyright 2026 PetitMaker contributors
+
+Licensed under the Apache License, Version 2.0; see LICENSE.
+
+This product includes third-party software; see docs/THIRD_PARTY_NOTICES.md, with the full
+license texts under licenses/.
+
+PetitMaker is an unofficial fan project; see docs/ASSET_LICENSES.md and
+https://petitmaker.cc/about.

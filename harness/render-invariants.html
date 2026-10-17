@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>harness · 渲染不变量（I9 · N2 · REQ-018 读回）</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #171a1f; color: #dfe4ea; margin: 0; padding: 16px; }
+      h1, h2 { font-size: 18px; }
+      table { border-collapse: collapse; margin: 8px 0; }
+      td, th { border: 1px solid #333a42; padding: 4px 10px; text-align: left; font-size: 13px; }
+      .pass { color: #7fd88f; font-weight: 600; }
+      .fail { color: #ff8a8a; font-weight: 600; }
+      #stage { width: 1024px; height: 576px; border: 1px solid #333a42; background: #14161a; }
+      pre { background: #101317; padding: 10px; white-space: pre-wrap; font-size: 12px; }
+      button { font-size: 15px; padding: 8px 24px; }
+      p.note { color: #8a929c; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>harness · 渲染不变量（I9 脏块增量重建 · N2 贴图源 · REQ-018 高亮计数）</h1>
+    <p class="note">
+      I9 判据：单块改动触发的重建 chunk 数 = 受影响 chunk 数（分母由模型层
+      <code>Volume.affectedResidentChunks</code> 给出，含跨边界邻域）· NaN 计数 = 0 · 无空帧 ·
+      draw call 与驻留 chunk 的关系记实测值（不硬编码）。判据目录 = <code>curriculum/testing-plan.md</code>。
+    </p>
+    <div id="stage"></div>
+    <p><button id="run">运行全部检查</button> <span id="progress"></span></p>
+    <table id="result"></table>
+    <pre id="raw"></pre>
+    <script type="module" src="./render-invariants.ts"></script>
+  </body>
+</html>
