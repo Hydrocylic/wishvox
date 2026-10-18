@@ -6,8 +6,12 @@
 import type { ProjectFileV2 } from '../core/types'
 import { decodeProject } from './serialize'
 
-/** 展示件 URL（唯一常量）。Vite 把 `public/` 拷进 dist 根 ⇒ 运行时按站点根路径取。 */
-export const SHOWCASE_URL = '/showcase/blue-big-fat-fish.json'
+/**
+ * 展示件 URL（唯一常量）。`public/` 的内容随部署 `base` 落地 ⇒ 用 Vite 的 `BASE_URL` 自适配：
+ * 本地 dev / vitest 下 `BASE_URL='/'` 得 `/showcase/…`；GitHub 项目页构建下得 `/wishvox/showcase/…`。
+ * 替换默认件仍只需换 `public/showcase/` 文件（本常量只写文件名）。
+ */
+export const SHOWCASE_URL = `${import.meta.env.BASE_URL}showcase/blue-big-fat-fish.json`
 
 /** 注入面：只要求 fetch 的"够用形状"（`ok` + `text()`），不绑 `Response` 具体实现（无头测试可直造）。 */
 export type ShowcaseFetch = (url: string) => Promise<{ ok: boolean; text(): Promise<string> }>

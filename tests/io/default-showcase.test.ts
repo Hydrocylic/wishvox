@@ -44,8 +44,9 @@ describe('S2 · loadDefaultShowcase（单一 URL 常量 + 可注入 + 失败一�
     expect(calls).toEqual([SHOWCASE_URL])
   })
 
-  it('展示件 URL 收敛为单一常量（替换默认件 = 换文件 + 改这一个常量）', () => {
-    expect(SHOWCASE_URL).toBe('/showcase/blue-big-fat-fish.json')
+  it('展示件 URL 收敛为单一常量，并随部署 base 自适配（vitest 下 BASE_URL = /）', () => {
+    expect(import.meta.env.BASE_URL).toBe('/')
+    expect(SHOWCASE_URL).toBe(`${import.meta.env.BASE_URL}showcase/blue-big-fat-fish.json`)
   })
 
   it('非 2xx ⇒ null（不误报成功）', async () => {

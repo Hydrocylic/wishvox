@@ -1,0 +1,46 @@
+# Wishvox · GitHub Pages（项目页）部署
+# 触发：master push 或手动；构建 base = /wishvox/（vite.config.ts 按 GITHUB_ACTIONS 判定）。
+# 仓库侧一次性设置：Settings → Pages → Source = GitHub Actions。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Pages 部署需要：pages: write 发布、id-token: write（OIDC）；contents: read 拉代码。
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署；新 push 取消进行中的旧部署。
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
