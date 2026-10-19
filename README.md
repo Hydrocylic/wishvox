@@ -49,11 +49,13 @@ For in-browser checks that cannot run headless (WebGL, frame rate, render invari
 
 - **Two modes.** Inspect (default) vs. edit. In inspect mode every human editing entry point is disabled; switching modes is a button, not a hidden keyboard shortcut.
 - **Direct editing.** Place / erase / paint / eyedropper with per-tool brush sizes, a 3D viewport, layer display modes (all / below / single layer), camera reset and independent work-grid guides.
+- **Camera controls (browser-safe).** In edit mode: left = brush, **Shift + left = orbit**, **middle-drag / Alt + left = pan**, wheel = zoom; right-drag orbit still works but is no longer required (browsers/extensions hijack right-drag gestures). In inspect mode: left = orbit, middle or right = pan. A small viewport toolbar has mode switch + reset view.
 - **Procedural operations.** Nine ops — layer add, bevel, clear scope, mirror array, noise fill, noise sculpt, preset shape, raise by layers, recolor — each taking a scope, parameters and a seed.
 - **Parts and compositions.** Group blocks into named parts, and group parts into compositions, so "recolor the roof" can target a real object instead of the whole model.
 - **History.** One patch per stroke, or per applied operation batch. Undo, redo, and jump to any point in the patch log.
 - **Project files.** Versioned JSON (v2, reads v1), export/download and import with validation before anything is applied.
-- **AI panel.** A floating session panel that accepts an order, shows a plan, asks for approval at gates, and reports what it changed.
+- **AI workspace.** A docked tab that accepts an order, shows a plan, asks for approval at gates, and reports what it changed.
+- **Bead-pattern import (🖼 图纸 → 方块).** Pick a perler-bead chart image; the panel recovers the grid and its per-cell colors, previews the blocks it will place, then writes them in one patch. Two recognition channels: a local, offline grid detector for regular colored charts, and an optional vision-model call for symbol/code charts or photographed pages (configure "视觉模型" under AI settings for the latter).
 
 ## Architecture
 
@@ -70,7 +72,7 @@ For in-browser checks that cannot run headless (WebGL, frame rate, render invari
 | [`render`](src/render/README.md) | Draw only: three.js instanced chunk meshes, appearance resolution, highlight and preview. Does not import interaction. |
 | [`interaction`](src/interaction/README.md) | 3D view orchestration, camera rig, ray picking, grid guides. Implements the render port defined by `edit`. |
 | [`ai`](src/ai/README.md) | Agent loop, tool surface derived from the op specs, OpenAI-compatible streaming provider, approval gates, append-only session log. |
-| [`ui`](src/ui/README.md) | React shell, floating panels, viewport host, and the named command table that buttons, shortcuts and AI tools share. |
+| [`ui`](src/ui/README.md) | React shell (top bar + left tool rail + viewport + right dock + status bar), viewport host, and the named command table that buttons, shortcuts and AI tools share. |
 | [`app`](src/app/README.md) | Composition root: lazily created singletons and `bootstrap()`. |
 
 ### Two write paths, one ledger
@@ -85,6 +87,17 @@ AI tool ──► runProgramOp ──► change set ─────────�
 - `ops` computes a terminal-state diff — every affected coordinate appears exactly once, and an empty diff produces no patch at all. "Compute the change" belongs to `ops`; "record it" belongs to `core`.
 - Rendering sits behind a port (`edit/render-port.ts`). `edit` never imports `render`, `interaction` or three.js, so the whole editor can be instantiated headlessly in tests.
 - Layer direction is strict: a layer may import itself and lower layers. The only upward edge is `ui → app`, and [`tests/structure/structure.test.ts`](tests/structure/structure.test.ts) enforces the order, acyclicity, the no-`ai→ui` rule and the composition-root rule.
+
+### Importing a bead pattern (拼豆图纸)
+
+Open **AI 编辑 → 🖼 图纸 → 方块**:
+
+1. **选择图纸** — a chart image (PNG / JPEG / WebP). The local detector cuts away printed row/column ruler bars (including the blue MARD-style strips), finds the cell size (printed grid lines first, colour-edge periodicity for line-free charts), estimates each cell's fill colour from an inner border ring cross-checked against the interior mode colour (so dense 4-character colour codes and watermarks are ignored), then snaps pixels to the palette read from the printed legend swatches (with a per-cell fallback for pale colours the legend detection misses), and treats "white cell + code" as a white bead rather than an empty cell. Residual legend strips can be removed with the **裁边（格）** left/top/right/bottom inputs, and **水平镜像** flips charts printed in mirror mode. Skewed photos or unusual symbol legends: click **🤖 AI 识别** instead (needs a vision-capable model configured under AI 连接 → 视觉模型; the local channel never leaves your machine). Optional **裁掉四周空白边** crops blank margins for tighter placement.
+2. **核对预览** — the canvas shows *the blocks that will be placed*, plus size / colour count / empty cells. Wrong grid → set rows/cols manually or move the 颜色归并 threshold.
+3. **摆放参数** — plane (floor `x-z` or wall `x-y`), top-left origin, thickness (1–8 layers along the normal), and whether empty cells also clear the target area.
+4. **生成方块** — one import = **one patch**, so one undo removes it. The count and any out-of-range cells are reported; nothing is written when the input is invalid.
+
+AI recognition is a read-only step: the model returns a colour grid that you inspect; the write goes through the same editor operations a human uses (no private write path).
 
 ### What is persisted
 
@@ -138,6 +151,7 @@ Wishvox is licensed under the **Apache License 2.0**. See [`LICENSE`](LICENSE) f
 **Wishvox** 把一句话（或导入的建筑）变成体素建筑；人与 AI 在同一套程序化操作上协同编辑，每一步都记进补丁日志，因此可检查、可撤销、可重放。
 
 - **首运行**：没有存档时载入默认展示件「Blue Big Fat Fish」（31 色）。顶栏 `🔄 回到默认展示件` 可随时重置（会先问是否保存当前工作）；`🧹 清理本地数据` 清空后会再次载入展示件。
+- **图纸导入**（新增）：AI 工作台里「🖼 图纸 → 方块」——选一张拼豆图纸，本地识别（离线、规则彩色格子图纸）或 AI 视觉识别（符号 / 色号图纸、拍照页），核对预览后选平面（地面 / 墙面）、起点、厚度，一次生成一条补丁（一次撤销）。AI 通道需在「AI 连接 → 视觉模型」填支持图片输入的模型名。
 - **怎么跑**：需要 Node.js >= 24。
 
   ```bash
