@@ -5,7 +5,7 @@ import { useEditorUi } from '../state/editor-store'
 import { cmd, commandEnabled } from './commands'
 import type { AppCommand } from './commands'
 import { EditorWorkspace } from './EditorWorkspace'
-import { isUiEventTarget } from './floating/UiInputBoundary'
+import { isTextEntryTarget } from './floating/UiInputBoundary'
 
 const css = `
   :root {
@@ -90,10 +90,13 @@ export function App(): JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (!(e.ctrlKey || e.metaKey)) return
-      // `D1`（`F-03` · architect §5.5）：**UI 覆盖层上的按键不算画布输入**——
-      // 焦点在方块里的按钮 / 输入框时，Ctrl+Z 不得改动模型（文本框保留自己的本地撤销）。
-      // 为什么必须查 DOM 边界而不是 `stopPropagation`：本监听挂在 window，冒泡拦截对它无效。
-      if (isUiEventTarget(e.target)) return
+      // `D1`（`F-03` · architect §5.5）：UI 覆盖层上的按键不算画布输入——但**只有文本输入面**保留
+      // 自己的本地撤销（`R-14`，debug-261018，用户 2026-10-18 口径 A）。原判据 `isUiEventTarget` 把
+      // 悬浮方块里的**按钮**也拦了：点过色板色块后焦点留在 `tile:tools` 内，`Ctrl+Z` 直接 return，
+      // `history.undo()` 根本没执行（用户报的"换色后撤不掉上一块"）。按钮 / 勾选框 / 下拉不再拦截；
+      // 指针隔离仍走 `isUiEventTarget`（Viewport / `pointOverUi`），不因这次收窄而放宽。
+      // 为什么必须查 DOM 而不是 `stopPropagation`：本监听挂在 window，冒泡拦截对它无效。
+      if (isTextEntryTarget(e.target)) return
       if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault()
         getEditor().undo()
