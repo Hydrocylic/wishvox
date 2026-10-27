@@ -68,11 +68,16 @@ export class Editor {
     this.stroke = new StrokeSession(this)
   }
 
-  /** 浏览器环境把存储换成 IndexedDB（bootstrap 调一次；测试保持内存存储） */
+  /** 浏览器环境把存储换成 IndexedDB（bootstrap 调一次；测试保持内存存储）。
+   *  降级到内存时把 `storageOk` 置 false——UI 必须明示"本次会话不持久化"，不能继续报"已保存"。 */
   async adoptBrowserStore(): Promise<void> {
-    if (!IdbProjectStore.supported()) return
+    if (!IdbProjectStore.supported()) {
+      setUi({ storageOk: false })
+      return
+    }
     this.store = await createProjectStore()
     this.autosave.setStore(this.store)
+    setUi({ storageOk: this.store.kind === 'indexeddb' })
   }
 
   /** 启动：从存储恢复（REQ-001 ②③ 刷新不丢的入口）；无存档 ⇒ 首运行载入展示件（REQ-062），

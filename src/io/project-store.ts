@@ -46,14 +46,39 @@ export class IdbProjectStore implements ProjectStore {
   static async open(): Promise<IdbProjectStore> {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(IdbProjectStore.DB_NAME, 1)
+      // 只结算一次：onblocked 之后浏览器仍可能补发 onsuccess（阻塞方关掉时），
+      // 那种迟到的库没人会再用——就地关掉，避免泄漏连接。
+      let settled = false
       req.onupgradeneeded = () => {
         if (!req.result.objectStoreNames.contains(IdbProjectStore.STORE)) {
           req.result.createObjectStore(IdbProjectStore.STORE)
         }
       }
-      req.onsuccess = () => resolve(new IdbProjectStore(req.result))
-      req.onerror = () => reject(req.error ?? new Error('indexeddb open failed'))
+      req.onsuccess = () => {
+        if (settled) {
+          req.result.close()
+          return
+        }
+        settled = true
+        resolve(new IdbProjectStore(req.result))
+      }
+      req.onerror = () => {
+        if (settled) return
+        settled = true
+        reject(req.error ?? new Error('indexeddb open failed'))
+      }
+      // 隐私模式 / 被占用时 open 可能一直不回调（浏览器不给 onerror）⇒ 明确拒绝，交给内存兜底
+      req.onblocked = () => {
+        if (settled) return
+        settled = true
+        reject(new Error('indexeddb open blocked'))
+      }
     })
+  }
+
+  /** 关闭底层连接（超时 / 拒绝后迟到的 open 用：不换 store，也不泄漏连接） */
+  close(): void {
+    this.db.close()
   }
 
   async save(file: ProjectFileV2): Promise<void> {
@@ -81,7 +106,36 @@ export class IdbProjectStore implements ProjectStore {
   }
 }
 
-export async function createProjectStore(): Promise<ProjectStore> {
-  if (IdbProjectStore.supported()) return IdbProjectStore.open()
-  return new MemoryProjectStore()
+/** IndexedDB 打开的超时（ms）：超时 / 被阻断 ⇒ 退回内存存储，页面照常可用（不白屏） */
+export const IDB_OPEN_TIMEOUT_MS = 1500
+
+/**
+ * 浏览器存储：IDB 可用且能在超时内打开 ⇒ IDB；否则退回内存（本轮会话不持久化，但不阻塞 UI）。
+ * 超时后迟到的连接会被关闭，不会静默换成 IDB 存储（Editor 只取一次 store）。
+ */
+export async function createProjectStore(timeoutMs: number = IDB_OPEN_TIMEOUT_MS): Promise<ProjectStore> {
+  if (!IdbProjectStore.supported()) return new MemoryProjectStore()
+  let settled = false
+  let timer: ReturnType<typeof setTimeout> | null = null
+  return new Promise<ProjectStore>((resolve) => {
+    const fallback = (): void => {
+      if (settled) return
+      settled = true
+      if (timer !== null) clearTimeout(timer)
+      resolve(new MemoryProjectStore())
+    }
+    timer = setTimeout(fallback, timeoutMs)
+    IdbProjectStore.open().then(
+      (store) => {
+        if (settled) {
+          store.close()
+          return
+        }
+        settled = true
+        if (timer !== null) clearTimeout(timer)
+        resolve(store)
+      },
+      () => fallback(),
+    )
+  })
 }

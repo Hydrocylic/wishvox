@@ -39,6 +39,8 @@ const css = `
   .topbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: #12161d; }
   .brand { font-weight: 700; letter-spacing: .01em; }
   .save { color: var(--fg-mute); font-size: 12px; }
+  /* 存储降级（REQ-002 补）：内存回退必须可见，不能继续显示"已保存" */
+  .save-volatile { color: var(--warn); }
   .spacer { flex: 1; }
   .icon-btn { min-width: 34px; padding: 3px 8px; font-size: 15px; line-height: 1.35; }
   .mini-btn { padding: 2px 7px; font-size: 13px; line-height: 1.3; }
@@ -80,6 +82,7 @@ const css = `
 // 会话态视图（层次 / 网格 / 相机 / 双态）不进项目文件（REQ-058）。
 export function App(): JSX.Element {
   const saveState = useEditorUi((s) => s.saveState)
+  const storageOk = useEditorUi((s) => s.storageOk)
   const mode = useEditorUi((s) => s.mode)
   const message = useEditorUi((s) => s.message)
   const nonEmpty = useEditorUi((s) => s.nonEmpty)
@@ -133,7 +136,11 @@ export function App(): JSX.Element {
   // 保存状态字（§2.2 首行 · REQ-060 验收①/④）：`error` 不只是变红——**必须给动作出口**
   // （`Q5` 已裁 = A：点击状态字触发 `autosave.flush()`）；其余三值是读数，保持中性灰。
   const saveText = (): JSX.Element =>
-    saveState === 'error' ? (
+    !storageOk ? (
+      <span className="save save-volatile" title="浏览器存储不可用：改动只在本次会话有效">
+        自动保存：本次会话不持久化（存储不可用）
+      </span>
+    ) : saveState === 'error' ? (
       <button className="save save-retry" title="点击重试保存" aria-label="重试保存" onClick={() => void getEditor().autosave.flush()}>
         {saveLabel[saveState]}
       </button>

@@ -93,6 +93,9 @@ export interface EditorUiState {
   compositions: CompositionItem[]
   manualBlockCount: number
   saveState: SaveState
+  /** 存储持久化可用（false = 本次会话只在内存，刷新即丢；由 Editor.adoptBrowserStore 写入，
+   *  UI 据此替换"已保存"读数——不能把内存写入说成落盘） */
+  storageOk: boolean
   canUndo: boolean
   canRedo: boolean
   nonEmpty: number
@@ -156,6 +159,7 @@ export const useEditorUi = create<EditorUiState>(() => ({
   compositions: [],
   manualBlockCount: 0,
   saveState: 'idle',
+  storageOk: true,
   canUndo: false,
   canRedo: false,
   nonEmpty: 0,
