@@ -113,7 +113,7 @@ AI tool ──► runProgramOp ──► change set ─────────�
 | [`harness/`](harness/README.md) | In-browser check pages for what cannot be tested headlessly (WebGL, frame rate, render invariants, gate UI). |
 | [`public/showcase/`](public/showcase) | The default showcase project file. |
 | [`index.html`](index.html) | Vite entry document. |
-| [`LICENSE`](LICENSE) · [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES) | Apache-2.0 license and third-party attribution. |
+| [`LICENSE`](LICENSE) · [`NOTICE`](NOTICE) · [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES) | Apache-2.0 license, upstream acknowledgement and third-party attribution. |
 
 ## Status and roadmap
 
@@ -127,6 +127,10 @@ Not in this release — kept as a direction, not a claim:
 - Texture or material systems.
 
 The public site is intended to live at `https://hydrocylic.github.io/wishvox/`; verify against the deployed build rather than this file.
+
+## Acknowledgements
+
+The local bead-chart import (recognition kernel and the single-patch apply path) and selected shell pieces were adapted from [pull request #1](https://github.com/Hydrocylic/wishvox/pull/1) by [@Redbean520](https://github.com/Redbean520). The exact received scope is recorded in [`NOTICE`](NOTICE).
 
 ## License
 
@@ -152,4 +156,5 @@ Wishvox is licensed under the **Apache License 2.0**. See [`LICENSE`](LICENSE) f
 - **架构**：`src/` 分 11 个模块（`ai` `app` `core` `edit` `interaction` `io` `ops` `render` `rules` `state` `ui`）。人的笔刷与 AI 的程序化操作最终都写入同一个 `PatchLog`；层间只允许向下依赖，唯一上行边是 `ui → app`。
 - **关键决定**：AI 只产出「每行一条」的程序化指令，不直接吐体素数组；程序化操作按参数与种子确定性复现；方块体系只有颜色（无贴图、无第二套方块身份）；AI 会话「日志即状态」。
 - **状态**：`v1.0.0` 首次公开。建造演出、视频/截图导出与外部蓝图导入是后续方向，**本版未实现**。
+- **致谢**：拼豆图纸本地识别与部分三栏外壳改编自 [PR #1](https://github.com/Hydrocylic/wishvox/pull/1)（[@Redbean520](https://github.com/Redbean520)），接收范围见 [`NOTICE`](NOTICE)。
 - **许可**：Apache-2.0，见 [`LICENSE`](LICENSE) 与 [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES)。
