@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useUiDrafts } from '../state/ui-drafts'
 import { runNoiseSculpt, INSPECT_READONLY } from './commands'
 import type { NoiseFormState } from './commands'
 import { useEditorUi } from '../state/editor-store'
-import { FloatingTile } from './floating/FloatingTile'
+import { PanelFrame } from './PanelFrame'
 
 // F8 噪声模块（REQ-057 · Q3 拍板）：编辑态的**一个动作按钮**（不是新建流程的一步）。
 // 参数 = 幅度 / 密度 / 种子 / 六个方位可勾选（+ 范围与方块）；一次性生成、无动画（心跳动画记账）。
@@ -16,7 +16,10 @@ export function NoisePanel(): JSX.Element {
   const paletteItems = useEditorUi((s) => s.paletteItems)
   const currentIdentity = useEditorUi((s) => s.currentIdentity)
   const disabled = mode !== 'edit'
-  const [form, setForm] = useState<NoiseFormState>(() => ({
+  // 表单草稿提升到会话 store（切壳不丢）
+  const noiseDraft = useUiDrafts((s) => s.noise)
+  const setNoiseDraft = useUiDrafts((s) => s.setNoise)
+  const form = (noiseDraft as unknown as NoiseFormState | null) ?? {
     scopeKind: 'all',
     scopeId: '',
     amplitude: 1,
@@ -24,7 +27,10 @@ export function NoisePanel(): JSX.Element {
     seed: 42,
     dirs: { ...DEFAULT_DIRS },
     identity: currentIdentity,
-  }))
+  }
+  const setForm = (next: NoiseFormState | ((f: NoiseFormState) => NoiseFormState)): void => {
+    setNoiseDraft((typeof next === 'function' ? next(form) : next) as unknown as Record<string, unknown>)
+  }
   const set = (patch: Partial<NoiseFormState>): void => setForm({ ...form, ...patch })
   const scopeValue = form.scopeKind === 'part' || form.scopeKind === 'composition' ? `${form.scopeKind}:${form.scopeId}` : form.scopeKind
   // 折叠态摘要（§1.2 表「噪声」行）= `表面生长 / 侵蚀 · 范围 {全体|构件名|组合名}`；检视态追加 `· 检视态只读`。
@@ -48,7 +54,7 @@ export function NoisePanel(): JSX.Element {
     </label>
   )
   return (
-    <FloatingTile id="noise" summary={hint}>
+    <PanelFrame id="noise" summary={hint}>
       {disabled && <p className="warn">{INSPECT_READONLY}</p>}
       <label style={{ display: 'block', margin: '6px 0', fontSize: 12 }}>
         范围（默认 = 坯料 / 全体）：
@@ -150,6 +156,6 @@ export function NoisePanel(): JSX.Element {
       <p className="note">
         在范围表面按种子抽签生长 / 侵蚀；同参数（含种子）同结果；心跳动画属以后层。
       </p>
-    </FloatingTile>
+    </PanelFrame>
   )
 }

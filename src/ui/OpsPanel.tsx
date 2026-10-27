@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useUiDrafts } from '../state/ui-drafts'
 import type { Coord, OpName, ProgramOp, ScopeRef } from '../core/types'
 import { OP_SPECS } from '../core/op-spec'
 import { getEditor } from '../app/runtime'
 import { useEditorUi } from '../state/editor-store'
 import { INSPECT_READONLY } from './commands'
-import { FloatingTile } from './floating/FloatingTile'
+import { PanelFrame } from './PanelFrame'
 
 // r02 手动调用面（REQ-014 ① / plan §2）：选操作 → 填参数 → 选范围 → 应用。
 // 表单由 core/op-spec.ts 的规格表驱动（参数面唯一出处）；应用走 getEditor().runOp ⇒ runProgramOp + PatchLog.applyPlanned（一条补丁），
@@ -76,16 +77,27 @@ export function OpsPanel(): JSX.Element {
   const paletteItems = useEditorUi((s) => s.paletteItems)
   const mode = useEditorUi((s) => s.mode)
   const firstKey = paletteItems[0]?.key ?? 1
-  const [name, setName] = useState<OpName>('presetShape')
-  const [form, setForm] = useState<FormState>(() => defaultForm('presetShape', firstKey))
-  const [expandedKeys, setExpandedKeys] = useState(false)
+  // 表单草稿提升到会话 store（切壳不丢）；name / form / 展开态同源，一次写回
+  const opsDraft = useUiDrafts((s) => s.ops)
+  const setOpsDraft = useUiDrafts((s) => s.setOps)
+  const name = (opsDraft?.name ?? 'presetShape') as OpName
+  const form = (opsDraft?.form as unknown as FormState | undefined) ?? defaultForm('presetShape', firstKey)
+  const expandedKeys = opsDraft?.expanded ?? false
+  const writeOps = (patch: { name?: OpName; form?: FormState; expanded?: boolean }): void => {
+    setOpsDraft({
+      name: patch.name ?? name,
+      form: (patch.form ?? form) as unknown as Record<string, unknown>,
+      expanded: patch.expanded ?? expandedKeys,
+    })
+  }
   const spec = OP_SPECS.find((s) => s.name === name)!
   const disabled = mode !== 'edit'
 
   const pick = (n: OpName): void => {
-    setName(n)
-    setForm(defaultForm(n, firstKey))
-    setExpandedKeys(false)
+    setOpsDraft({ name: n, form: defaultForm(n, firstKey) as unknown as Record<string, unknown>, expanded: false })
+  }
+  const setForm = (next: FormState | ((f: FormState) => FormState)): void => {
+    writeOps({ form: typeof next === 'function' ? next(form) : next })
   }
   const set = (field: string, value: unknown): void => setForm({ ...form, [field]: value })
 
@@ -153,7 +165,7 @@ export function OpsPanel(): JSX.Element {
   // 条数取 `OP_SPECS.length`（= 9，参数面唯一出处 `core/op-spec.ts`）而非手写常量——
   // 与 `r04` `R1`（"基线数字要带测法"）同精神：口径与来源同点，表变了摘要跟着变。
   return (
-    <FloatingTile id="ops" summary={`${OP_SPECS.length} 个预设操作${disabled ? ' · 检视态只读' : ''}`}>
+    <PanelFrame id="ops" summary={`${OP_SPECS.length} 个预设操作${disabled ? ' · 检视态只读' : ''}`}>
       {disabled && <p className="warn">{INSPECT_READONLY}</p>}
       <select value={name} disabled={disabled} style={{ width: '100%' }} onChange={(e) => pick(e.target.value as OpName)}>
         {OP_SPECS.map((s) => (
@@ -229,7 +241,7 @@ export function OpsPanel(): JSX.Element {
               ))}
             </select>
           ) : p.type === 'blockKeys' ? (
-            <button style={{ width: '100%' }} onClick={() => setExpandedKeys(!expandedKeys)}>
+            <button style={{ width: '100%' }} onClick={() => writeOps({ expanded: !expandedKeys })}>
               {expandedKeys ? '收起方块列表' : `已选 ${(form[p.field] as number[] | undefined)?.length ?? 0} 种方块（点选）`}
             </button>
           ) : p.type === 'coord3' ? (
@@ -255,7 +267,7 @@ export function OpsPanel(): JSX.Element {
       <button style={{ width: '100%', marginTop: 8 }} disabled={disabled} onClick={apply}>
         ⚙️ 应用（一次 = 一条补丁，可一次撤销）
       </button>
-    </FloatingTile>
+    </PanelFrame>
   )
 }
 

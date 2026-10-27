@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { getAiSession } from '../app/runtime'
 import { useAiUi } from '../state/ai-store'
-import { AiGateCard } from './AiGateCard'
+import { useUiDrafts } from '../state/ui-drafts'
 import { AiSession } from './AiSession'
 import { AiSettings } from './AiSettings'
-import { FloatingTile } from './floating/FloatingTile'
+import { PanelFrame } from './PanelFrame'
 
 // r05 T4（末批）· **AI 工作台**（规格 §1.2「AI 工作台」行 · §1.4-2 的三段拆件 · `REQ-060`/`061`）：
 //   件一 `AiSettings`  = 二级折叠「🔌 AI 连接」（设置面，未配置时默认展开）
 //   件二 `AiSession`   = 会话流 + 相位行 + 错态出口 + 输入与「发送」
-//   件三 `AiGateCard`  = **常显闸门卡**（挂 `pinned` 区 ⇒ 不随折叠收起，§3.2 / `REQ-061`）
+//   件三 `AiGateCard`  = 闸门卡（S7 起由壳级 `GateDock` 挂载，本面板不再挂；见 `GateDock.tsx`）
 //   本件 = 装配 + 折叠态**状态投影**（§2.3）。
 // 折叠摘要口径（§1.2 / §2.3）：`{忙/等/错摘要} · {N 条指令｜空会话}`；**`pendingGate` 期间固定
 // 「⚠️ 等待闸门批准」**（等态黄）——非「可操作」态必须投影进摘要，否则折叠后用户看不到"为什么没反应"。
@@ -20,7 +20,9 @@ export function AiPanel(): JSX.Element {
   const error = useAiUi((s) => s.error)
   const wire = useAiUi((s) => s.wire)
   const roundsUsed = useAiUi((s) => s.roundsUsed)
-  const [text, setText] = useState('')
+  // 输入草稿提升到会话 store：切壳会换面板树，本地 state 会随卸载丢失（S8 判据「草稿不丢」）
+  const text = useUiDrafts((s) => s.aiInput)
+  const setText = useUiDrafts((s) => s.setAiInput)
   const bootedRef = useRef(false)
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export function AiPanel(): JSX.Element {
         : null
 
   return (
-    <FloatingTile
+    <PanelFrame
       id="ai"
       summary={
         <>
@@ -60,7 +62,6 @@ export function AiPanel(): JSX.Element {
           {jobCount === 0 ? '空会话' : `${jobCount} 条指令`}
         </>
       }
-      accessory={<AiGateCard />}
     >
       <AiSettings />
       <AiSession
@@ -73,6 +74,6 @@ export function AiPanel(): JSX.Element {
         setText={setText}
         send={send}
       />
-    </FloatingTile>
+    </PanelFrame>
   )
 }

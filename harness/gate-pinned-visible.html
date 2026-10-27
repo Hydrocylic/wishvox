@@ -31,11 +31,13 @@
   <body>
     <h1>harness · 闸门卡折叠可见读回（r05 · `REQ-061` 验收①）</h1>
     <p class="note">
-      断言 = **折叠态（`aria-expanded=false`、`panel-body` 已卸载）+ `pendingGate` ⇒ `panel-pinned` 可见（高 &gt; 0）
-      且闸门按钮数 = 4**（批准 / 本次会话都批准 / 跳过 / 回复）；对照 = 折叠态无闸门 ⇒ 不可见、展开态同位置同按钮数、清闸门 ⇒ 归 0。
-      渲染的是**真产品件**（`ui/AiPanel` ⇒ `ui/Section` 的 `pinned` 区 + `ui/AiGateCard`），`pendingGate` 由**真 `SessionLog.append`**
+      断言 = **AI 块折叠态（`aria-expanded=false`、`panel-body` 已卸载）+ `pendingGate` ⇒ 壳级 `.gate-dock` 可见（高 &gt; 0）、
+      闸门按钮数 = 4、`.gate-dock` 只挂一份**（批准 / 本次会话都批准 / 跳过 / 回复）；对照 = 无闸门 ⇒ dock 不渲染（不占高）、
+      展开态 dock 仍在且仍 4 键、清闸门 ⇒ dock 消失归 0；**⑥ 三栏壳（M1）** = 换成 `RightDock` 后仍 1 份 dock、
+      4 按钮、6 标签、AI 标签选中且带 ⚠（证明闸门卡不随壳变）。
+      渲染的是**真产品件**（`ui/GateDock` + `ui/AiPanel`；`AiPanel` 自 S7 起不再挂闸门卡），`pendingGate` 由**真 `SessionLog.append`**
       造入再经 `AgentSession.pushView()` 投影 ⇒ 与产品同源；不出网、不需要 key。
-      来源 = `verify-261008b` §A-⑤（回执单原始读回：`pinnedVisible=true` · `pinnedButtons=4` · `pinnedHeightPx=113`）。
+      来源 = `verify-261008b` §A-⑤（原始读回 `pinnedVisible=true` · `pinnedButtons=4`）；S7 挂载位外提后判据不变。
     </p>
     <div id="stage"></div>
     <p><button id="run">运行全部检查</button> <span id="progress"></span></p>

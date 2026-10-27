@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useFold } from './useFold'
 
 /**
  * 可折叠区块（r05 UI 重设计，规格 §3.1 契约八条中的机制部分）：
@@ -25,7 +25,7 @@ export function Section(props: {
   pinned?: React.ReactNode
   children: React.ReactNode
 }): JSX.Element {
-  const [open, setOpen] = useState(props.defaultOpen ?? false)
+  const { open, setOpen } = useFold({ defaultOpen: props.defaultOpen ?? false })
   return (
     <section className="panel">
       <button

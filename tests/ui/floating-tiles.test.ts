@@ -12,7 +12,7 @@ import { computeTileLayout, contentRect, MIN_WORKSPACE, RIGHT_COLUMN, TILE_SIZE 
 import type { TileLayoutResult } from '../../src/ui/floating/tile-layout'
 import { defaultOpenMap, TILE_SPECS, tileSpec } from '../../src/ui/floating/tile-specs'
 import type { TileId } from '../../src/ui/floating/tile-specs'
-import { isUiEventTarget, pointOverUi, UI_BOUNDARY_ATTR } from '../../src/ui/floating/UiInputBoundary'
+import { isUiEventTarget, pointOverUi, UI_BOUNDARY_ATTR } from '../../src/ui/UiInputBoundary'
 import { FloatingTile } from '../../src/ui/floating/FloatingTile'
 import { TileHostContext } from '../../src/ui/floating/tile-host'
 import type { TileHost } from '../../src/ui/floating/tile-host'

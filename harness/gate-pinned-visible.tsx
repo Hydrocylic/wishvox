@@ -13,6 +13,9 @@ import type { Root } from 'react-dom/client'
 import { getAiSession } from '../src/app/runtime'
 import { useAiUi } from '../src/state/ai-store'
 import { AiPanel } from '../src/ui/AiPanel'
+import { GateDock } from '../src/ui/GateDock'
+import { ShellContext } from '../src/ui/ShellContext'
+import { RightDock } from '../src/ui/shell/RightDock'
 
 interface Check {
   name: string
@@ -34,27 +37,27 @@ async function frame(): Promise<void> {
   await new Promise<void>((r) => requestAnimationFrame(() => r()))
 }
 
-/** 读回面（同 `verify-261008b` §A-⑤ 的字段） */
+/** 读回面（S7 起：闸门卡挂壳级 `.gate-dock`；面板只读 `aria-expanded` / `panel-body`） */
 function inspect(): {
   ariaExpanded: string | null
-  panelPinnedExists: boolean
   panelBodyExists: boolean
-  pinnedVisible: boolean
-  pinnedHeightPx: number
-  pinnedButtons: number
+  dockExists: boolean
+  dockHeightPx: number
+  dockButtons: number
+  dockCount: number
   hintText: string | null
   storePendingGate: string | null
 } {
   const head = stage.querySelector('.panel-head')
-  const pinned = stage.querySelector('.panel-pinned') as HTMLElement | null
+  const dock = stage.querySelector('.gate-dock') as HTMLElement | null
   const hint = stage.querySelector('.panel-hint')
   return {
     ariaExpanded: head?.getAttribute('aria-expanded') ?? null,
-    panelPinnedExists: pinned !== null,
     panelBodyExists: stage.querySelector('.panel-body') !== null,
-    pinnedVisible: pinned !== null && pinned.getBoundingClientRect().height > 0,
-    pinnedHeightPx: pinned ? Math.round(pinned.getBoundingClientRect().height) : 0,
-    pinnedButtons: pinned ? pinned.querySelectorAll('button').length : 0,
+    dockExists: dock !== null,
+    dockHeightPx: dock ? Math.round(dock.getBoundingClientRect().height) : 0,
+    dockButtons: dock ? dock.querySelectorAll('button').length : 0,
+    dockCount: stage.querySelectorAll('.gate-dock').length,
     hintText: hint?.textContent ?? null,
     storePendingGate: useAiUi.getState().view?.pendingGate?.gateId ?? null,
   }
@@ -67,17 +70,17 @@ function click(sel: string): void {
 }
 
 /** 造真实待答闸门：**走 `SessionLog.append`（产品同一入口）**，再经 `pushView()` 投影进 UI store */
-function seedPendingGate(): string {
+function seedPendingGate(gateId = 'gate-probe-1'): string {
   const session = getAiSession()
   const gate = session.log.append({
     type: 'gateAsked',
-    gateId: 'gate-probe-1',
+    gateId,
     scope: 'plan',
     callId: null,
     summary: '计划：立树干 → 铺树冠 → 收口（探针造入）',
   })
   session.pushView()
-  return gate.type === 'gateAsked' ? gate.gateId : 'gate-probe-1'
+  return gate.type === 'gateAsked' ? gate.gateId : gateId
 }
 
 function clearPendingGate(): void {
@@ -93,56 +96,96 @@ async function run(): Promise<void> {
   const session = getAiSession() // 组合根惰性单例（探针内自足；不读存档、不用 key）
   session.clearSession()
 
-  // ── 装一次，用 React root 复用（挂载 = 产品 `AiPanel` 整块） ──
+  // ── 装一次，用 React root 复用（挂载 = 壳级 `GateDock` + 产品 `AiPanel`） ──
   stage.innerHTML = '<div id="probe-root"></div>'
   const rootEl = document.getElementById('probe-root') as HTMLDivElement
   let root: Root | null = createRoot(rootEl)
-  root.render(<AiPanel />)
+  root.render(
+    <>
+      <GateDock />
+      <AiPanel />
+    </>,
+  )
   await frame()
 
-  // ── ⑤-1 初始（AI 块默认展开、无闸门）──
+  // ── ⑤-1 初始（AI 块默认展开、无闸门）⇒ 不渲染 dock ──
   check(
-    '⑤-1 初始（AI 块默认展开、无闸门）',
-    'aria-expanded=true · panel-pinned 存在但不可见 · 折叠摘要 none',
+    '⑤-1 初始（无闸门）',
+    'aria-expanded=true · dock 不存在（不占高）',
     JSON.stringify(inspect()),
-    inspect().ariaExpanded === 'true' && inspect().panelPinnedExists && inspect().pinnedVisible === false,
+    inspect().ariaExpanded === 'true' && inspect().dockExists === false && inspect().dockCount === 0,
   )
 
-  // ── ⑤-2 折叠后（无闸门）⇒ 常显区不可见 ──
+  // ── ⑤-2 折叠后（无闸门）⇒ 仍无 dock ──
   click('.panel-head')
   await frame()
   {
     const r = inspect()
-    check('⑤-2 折叠后（无闸门）', 'aria-expanded=false · panel-body 卸载 · pinnedVisible=false · 按钮 0', JSON.stringify(r), r.ariaExpanded === 'false' && r.panelBodyExists === false && r.pinnedVisible === false && r.pinnedButtons === 0)
+    check('⑤-2 折叠后（无闸门）', 'aria-expanded=false · panel-body 卸载 · dock 不存在', JSON.stringify(r), r.ariaExpanded === 'false' && r.panelBodyExists === false && r.dockExists === false)
   }
 
-  // ── ⑤-3 折叠 + pendingGate（★ 判据）──
+  // ── ⑤-3 折叠 + pendingGate（★ 判据：与面板折叠无关、只挂一份）──
   const gateId = seedPendingGate()
   await frame()
   {
     const r = inspect()
     check(
       '⑤-3 折叠 + pendingGate（★ 判据）',
-      `aria-expanded=false · pinnedVisible=true · 闸门按钮数=4 · store.pendingGate=${gateId}`,
+      `aria-expanded=false · dock 可见（高>0）· 闸门按钮=4 · dock 数=1 · store.pendingGate=${gateId}`,
       JSON.stringify(r),
-      r.ariaExpanded === 'false' && r.panelBodyExists === false && r.pinnedVisible === true && r.pinnedButtons === 4 && r.storePendingGate === gateId,
+      r.ariaExpanded === 'false' && r.dockExists === true && r.dockHeightPx > 0 && r.dockButtons === 4 && r.dockCount === 1 && r.storePendingGate === gateId,
     )
   }
 
-  // ── ⑤-4 展开后对照（同位置同按钮数）──
+  // ── ⑤-4 展开后对照（dock 仍 4 键、仍只一份）──
   click('.panel-head')
   await frame()
   {
     const r = inspect()
-    check('⑤-4 展开后对照（同位置）', 'aria-expanded=true · pinnedVisible=true · 闸门按钮数=4', JSON.stringify(r), r.ariaExpanded === 'true' && r.pinnedVisible === true && r.pinnedButtons === 4)
+    check(
+      '⑤-4 展开后对照',
+      'aria-expanded=true · dock 仍在 · 闸门按钮=4 · dock 数=1',
+      JSON.stringify(r),
+      r.ariaExpanded === 'true' && r.dockExists === true && r.dockButtons === 4 && r.dockCount === 1,
+    )
   }
 
-  // ── ⑤-5 清闸门后对照 ⇒ 按钮归 0（证明按钮来自 pendingGate 而非静态 DOM）──
+  // ── ⑤-5 清闸门后对照 ⇒ dock 消失、按钮归 0（证明来自 pendingGate 而非静态 DOM）──
   clearPendingGate()
   await frame()
   {
     const r = inspect()
-    check('⑤-5 清闸门后对照', 'pinnedVisible=false · 按钮 0 · store.pendingGate=null', JSON.stringify(r), r.pinnedVisible === false && r.pinnedButtons === 0 && r.storePendingGate === null)
+    check('⑤-5 清闸门后对照', 'dock 不存在 · 按钮 0 · store.pendingGate=null', JSON.stringify(r), r.dockExists === false && r.dockButtons === 0 && r.storePendingGate === null)
+  }
+
+  // ── ⑥ 三栏壳（M1）：换 RightDock 后闸门卡仍成立（同一个 GateDock，不随壳变） ──
+  const m1GateId = seedPendingGate('gate-probe-2')
+  root.render(
+    <>
+      <GateDock />
+      <ShellContext.Provider value="m1">
+        <RightDock />
+      </ShellContext.Provider>
+    </>,
+  )
+  await frame()
+  {
+    const r = inspect()
+    const activeTab = stage.querySelector('[role="tab"][aria-selected="true"]')
+    check(
+      '⑥-1 三栏壳（M1）+ pendingGate',
+      `dock 1 份 · 高>0 · 4 按钮 · 6 标签 · AI 选中带 ⚠ · store.pendingGate=${m1GateId}`,
+      JSON.stringify({ ...r, activeTab: activeTab?.textContent ?? null }),
+      r.dockExists === true &&
+        r.dockHeightPx > 0 &&
+        r.dockButtons === 4 &&
+        r.dockCount === 1 &&
+        stage.querySelectorAll('[role="tab"]').length === 6 &&
+        activeTab !== null &&
+        (activeTab.textContent ?? '').startsWith('AI') &&
+        stage.querySelector('.tab-badge') !== null &&
+        r.storePendingGate === m1GateId,
+    )
   }
 
   root?.unmount()

@@ -4,7 +4,7 @@ import { getEditor } from '../app/runtime'
 import { syncCameraReadout } from '../edit/camera-sync'
 import { setUi, useEditorUi } from '../state/editor-store'
 import { NO_HIT_KIND } from '../state/preview-warning'
-import { pointOverUi } from './floating/UiInputBoundary'
+import { pointOverUi } from './UiInputBoundary'
 import type { PickResult } from '../interaction/pick'
 
 // T14：系统 crosshair 在视口背景上不可辨 ⇒ 自绘高对比准星，热点 = 中心 (12,12)。
@@ -33,6 +33,9 @@ export function Viewport(): JSX.Element {
     const el = ref.current
     if (!el) return
     const renderer = new VoxelView(el, getEditor().volume, getEditor().parts)
+    // S9b：切壳会卸载重挂 Viewport（构造器里的 frameModel 会打回默认机位）⇒ 有已存机位就先恢复
+    const saved = useEditorUi.getState().cameraPanel
+    if (saved.position) renderer.setCameraPose({ position: saved.position, target: saved.target })
     getEditor().attachRenderer(renderer)
     renderer.onCameraChange = (s) => syncCameraReadout(s)
     syncCameraReadout(renderer.getCameraState()) // 面板初始读数（不等第一次相机变化）

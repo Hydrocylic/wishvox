@@ -283,7 +283,7 @@ export class Editor {
   }
 
   /** 渲染层 → store 的相机读回（Viewport 挂接 renderer.onCameraChange 时调用） */
-  syncCameraReadout(read: { target: [number, number, number]; distance: number; fov: number; rotateSpeed: number; damping: number }): void {
+  syncCameraReadout(read: { target: [number, number, number]; distance: number; fov: number; rotateSpeed: number; damping: number; position: [number, number, number] }): void {
     pushCameraReadout(read)
   }
 

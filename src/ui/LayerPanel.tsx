@@ -3,7 +3,7 @@ import { getEditor } from '../app/runtime'
 import { COORD_LIMIT } from '../core/coords'
 import { cmd, commandEnabled, setLayerY } from './commands'
 import { effectiveGridY, useEditorUi } from '../state/editor-store'
-import { FloatingTile } from './floating/FloatingTile'
+import { PanelFrame } from './PanelFrame'
 
 // F3/F4（P2 扩展）：层次块（`D1` 起 = 右下悬浮方块，展开向上）——显示全部/以下/单层三档 + 垂直 y 滑块
 // + 每层块数 + **参考网格 / 工作网格各自独立 y**（含「参数跟随」）。
@@ -75,7 +75,7 @@ export function LayerPanel(): JSX.Element {
   }
 
   return (
-    <FloatingTile id="layers" summary={summary}>
+    <PanelFrame id="layers" summary={summary}>
       <div role="radiogroup" aria-label="层次显示档位" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6 }}>
         {modeButton(MODES[0]!)}
         <div style={{ display: 'flex', gap: 2 }}>{MODES.slice(1).map((m) => modeButton(m))}</div>
@@ -181,6 +181,6 @@ export function LayerPanel(): JSX.Element {
           跟随时高度实时取层次滑块当前层实际 y，手动输入禁用；取消跟随恢复跟随前的独立 y。工作网格 = 放置平面；参考网格只读，不提供放置。
         </p>
       </div>
-    </FloatingTile>
+    </PanelFrame>
   )
 }

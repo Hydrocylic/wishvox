@@ -35,6 +35,9 @@ export interface EditorRenderer {
     fov: number
     rotateSpeed: number
     damping: number
+    position: [number, number, number]
   }
   setCameraParams?(p: Partial<{ fov: number; rotateSpeed: number; damping: number; distance: number }>): void
+  /** S9b：恢复完整机位（切壳重挂时用） */
+  setCameraPose?(pose: { position: [number, number, number]; target: [number, number, number] }): void
 }

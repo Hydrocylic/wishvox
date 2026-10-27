@@ -5,15 +5,16 @@
 // 它**不** import Editor / AI session / 业务 store（architect §5.2 的依赖方向），也不持拖拽 / 缩放 /
 // 位置写回（`D1` ②⑦：没有 onDrag、没有 transform、没有 localStorage）。
 // 兼容面：DOM 契约沿用 `Section` 的类名（`.panel-head` / `.panel-hint` / `.panel-body` / `.panel-pinned`）
-// ⇒ 既有 harness 读回页（`harness/gate-pinned-visible.tsx` 查 `.panel-head[aria-expanded]` 与
-// `.panel-pinned` 高度）与既有 CSS 都继续成立，不因换壳而失效。
-import { useEffect, useRef, useState } from 'react'
+// ⇒ 既有 CSS 与面板内折叠读回继续成立；闸门卡自 S7 起外提到壳级 `.gate-dock`
+//（`harness/gate-pinned-visible.tsx` 读 `.panel-head[aria-expanded]` + `.gate-dock` 高度）。
+import { useRef } from 'react'
 import type { ReactNode } from 'react'
+import { useFold } from '../useFold'
 import { TILE_PAD } from './tile-layout'
 import { useTileHost } from './tile-host'
 import { tileSpec } from './tile-specs'
 import type { TileId } from './tile-specs'
-import { UI_BOUNDARY_ATTR } from './UiInputBoundary'
+import { UI_BOUNDARY_ATTR } from '../UiInputBoundary'
 
 export interface FloatingTileProps {
   readonly id: TileId
@@ -35,23 +36,15 @@ function summaryText(summary: ReactNode): string {
 export function FloatingTile(props: FloatingTileProps): JSX.Element {
   const spec = tileSpec(props.id)
   const host = useTileHost()
-  const [localOpen, setLocalOpen] = useState(spec.defaultOpen)
-  const open = host ? host.isOpen(props.id) : localOpen
-  const setOpen = (v: boolean): void => {
-    if (host) host.setOpen(props.id, v)
-    else setLocalOpen(v)
-  }
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const wasOpen = useRef(open)
-
-  // `D1` 焦点：收起后焦点回到所属触发方块（architect §5.5「隐藏正文不得仍能 Tab 进入」）
-  useEffect(() => {
-    if (wasOpen.current && !open) {
-      const el = triggerRef.current
-      if (el && typeof el.focus === 'function') el.focus()
-    }
-    wasOpen.current = open
-  }, [open])
+  // 开合 + 收起焦点回位走共用原语（`useFold`）：受控于 TileHost；无宿主时本地自持，行为与 S6 一致
+  const fold = useFold(
+    host
+      ? { open: host.isOpen(props.id), onChange: (v) => host.setOpen(props.id, v), triggerRef }
+      : { defaultOpen: spec.defaultOpen, triggerRef },
+  )
+  const open = fold.open
+  const setOpen = fold.setOpen
 
   const slot = host?.layout?.slots[props.id] ?? null
   const hint = summaryText(props.summary)

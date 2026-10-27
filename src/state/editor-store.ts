@@ -66,6 +66,8 @@ interface CameraPanelParams {
   rotateSpeed: number
   damping: number
   target: [number, number, number]
+  /** S9b：相机世界坐标（切壳重挂时恢复完整机位；首帧无值 ⇒ frameModel） */
+  position?: [number, number, number]
 }
 
 /** F12：撤销历史条目（label = 补丁的操作名字段；state 区分已应用 / 已撤销） */
@@ -105,6 +107,9 @@ export interface EditorUiState {
   // ── r02 前半会话态（不进项目文件）──
   /** F5 双态 */
   mode: EditorMode
+  /** 壳形态（S7 骨架 · Q4/D10）：`floating` = 现役浮块壳（默认）；`m1` = 三栏壳（S8 接入，
+   *  当前顶栏选项禁用）。会话态，不进项目文件；换壳不重建 Editor ⇒ 模型/历史/草稿不丢。 */
+  shell: 'floating' | 'm1'
   /** F7 笔刷参数。`REQ-064`（r05 件四）：尺寸**按工具各存一份**（`brushSizes`），
    *  `brushSize` = **当前工具那一份的镜像**（既有读点不变：面板 / 快捷键 / stroke 都读它）。
    *  唯一写者 = `edit/session-view.ts#setBrushSize` / `#setTool`，两者同步写两份 ⇒ 不变式恒成立。 */
@@ -167,6 +172,7 @@ export const useEditorUi = create<EditorUiState>(() => ({
   message: null,
   version: 0,
   mode: 'inspect',
+  shell: 'floating',
   brushSize: { x: 1, y: 1, z: 1 },
   brushSizes: { place: { x: 1, y: 1, z: 1 }, erase: { x: 1, y: 1, z: 1 }, paint: { x: 1, y: 1, z: 1 } },
   overridePlace: false,

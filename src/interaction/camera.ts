@@ -12,6 +12,8 @@ export interface CameraState {
   fov: number
   rotateSpeed: number
   damping: number
+  /** 相机世界坐标（S9b：切壳重挂时恢复完整机位用） */
+  position: [number, number, number]
 }
 
 export type InteractionMode = 'inspect' | 'edit'
@@ -126,7 +128,16 @@ export class CameraRig {
       fov: this.camera.fov,
       rotateSpeed: this.controls.rotateSpeed,
       damping: this.controls.dampingFactor,
+      position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
     }
+  }
+
+  /** S9b：恢复完整机位（切壳重挂时用；position + target 一起写，随后按常规读回） */
+  setCameraPose(pose: { position: [number, number, number]; target: [number, number, number] }): void {
+    this.camera.position.set(pose.position[0], pose.position[1], pose.position[2])
+    this.controls.target.set(pose.target[0], pose.target[1], pose.target[2])
+    this.controls.update()
+    this.notifyCameraChange()
   }
 
   /** F9 面板写入（距离 = 沿视线移动相机；fov/速度/阻尼直写对应参数） */

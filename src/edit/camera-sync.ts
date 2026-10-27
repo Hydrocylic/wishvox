@@ -19,6 +19,7 @@ export function applyCameraParams(
         rotateSpeed: p.rotateSpeed ?? read.rotateSpeed,
         damping: p.damping ?? read.damping,
         target: read.target,
+        position: read.position,
       },
     })
   }
@@ -28,7 +29,18 @@ export function applyCameraParams(
 export function resetCameraView(renderer: EditorRenderer | null): void {
   renderer?.frameModel()
   const read = renderer?.getCameraState?.()
-  if (read) setUi({ cameraPanel: { fov: read.fov, distance: read.distance, rotateSpeed: read.rotateSpeed, damping: read.damping, target: read.target } })
+  if (read) {
+    setUi({
+      cameraPanel: {
+        fov: read.fov,
+        distance: read.distance,
+        rotateSpeed: read.rotateSpeed,
+        damping: read.damping,
+        target: read.target,
+        position: read.position,
+      },
+    })
+  }
 }
 
 /** 渲染层 → store 的相机读回（Viewport 挂接 renderer.onCameraChange 时调用） */
@@ -38,7 +50,8 @@ export function syncCameraReadout(read: {
   fov: number
   rotateSpeed: number
   damping: number
+  position: [number, number, number]
 }): void {
   const cur = useEditorUi.getState().cameraPanel
-  setUi({ cameraPanel: { ...cur, distance: read.distance, target: read.target } })
+  setUi({ cameraPanel: { ...cur, distance: read.distance, target: read.target, position: read.position } })
 }

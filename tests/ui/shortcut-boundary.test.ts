@@ -13,7 +13,9 @@ import { act, createElement } from 'react'
 import type { ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
-import { isTextEntryTarget, isUiEventTarget, pointOverUi, UI_BOUNDARY_ATTR } from '../../src/ui/floating/UiInputBoundary'
+import { getAiSession } from '../../src/app/runtime'
+import { GateDock } from '../../src/ui/GateDock'
+import { isTextEntryTarget, isUiEventTarget, pointOverUi, UI_BOUNDARY_ATTR } from '../../src/ui/UiInputBoundary'
 import { FloatingTile } from '../../src/ui/floating/FloatingTile'
 import { installDom } from '../facilities/dom'
 import type { DomHarness, ShimElement } from '../facilities/dom'
@@ -105,6 +107,11 @@ function findAll(node: ShimElement, cls: string): ShimElement[] {
   return out
 }
 
+/** 数某标签的节点数（垫片没有 `querySelectorAll`，按树走） */
+function countTag(node: ShimElement, tag: string): number {
+  return (node.tagName === tag ? 1 : 0) + node.childNodes.reduce((sum, child) => sum + countTag(child, tag), 0)
+}
+
 async function mountToolsTile(children: ReactElement[]): Promise<ShimElement> {
   const container = dom.document.createElement('div')
   dom.document.body.appendChild(container)
@@ -162,6 +169,40 @@ describe('R-14-B 真实方块结构：色板按钮不拦、文本框仍拦', () 
     ;(dom.document as unknown as { elementFromPoint: (x: number, y: number) => unknown }).elementFromPoint = () => outside
     expect(pointOverUi(12, 34)).toBe(false)
   })
+
+  it('闸门卡只挂一份：GateDock 一份 + AiPanel 不再自带（闸门按钮总数 = 4，不是 8）', async () => {
+    const session = getAiSession()
+    session.clearSession()
+    session.log.append({
+      type: 'gateAsked',
+      gateId: 'gate-s7-probe',
+      scope: 'plan',
+      callId: null,
+      summary: '计划：S7 只挂一份探针',
+    })
+    session.pushView()
+
+    const container = dom.document.createElement('div')
+    dom.document.body.appendChild(container)
+    await act(async () => {
+      root = createRoot(container as unknown as HTMLElement)
+      root.render(createElement(GateDock))
+      await settle()
+    })
+
+    const docks = findAll(container, 'gate-dock')
+    expect(docks).toHaveLength(1) // 壳级只挂一份
+    expect(countTag(docks[0]!, 'BUTTON')).toBe(4) // 批准 / 本次会话都批准 / 跳过 / 回复
+    expect(countTag(container, 'BUTTON')).toBe(4) // 面板不在这棵树里，也没有第二份闸门
+    // 静态侧证：AiPanel 源码里不再出现闸门卡（挂载位只剩 GateDock）
+    const panelSrc =
+      Object.values(import.meta.glob('../../src/ui/AiPanel.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>)[0] ?? ''
+    expect(panelSrc).not.toMatch(/import \{[^}]*AiGateCard[^}]*\}/)
+    expect(panelSrc).not.toContain('<AiGateCard')
+    expect(panelSrc).not.toContain('accessory')
+
+    session.clearSession()
+  })
 })
 
 // ── C 段：App 接线（静态纪律）──
@@ -187,6 +228,8 @@ describe('R-14-C App 的 window keydown 闸门', () => {
     expect(gate).not.toContain('isUiEventTarget')
     expect(gate).toContain('getEditor().undo()')
     expect(gate).toContain('getEditor().redo()')
-    expect(appSrc).toMatch(/import \{[^}]*\bisTextEntryTarget\b[^}]*\} from '\.\/floating\/UiInputBoundary'/)
+    expect(appSrc).toMatch(/import \{[^}]*\bisTextEntryTarget\b[^}]*\} from '\.\/UiInputBoundary'/)
+    expect(appSrc).toMatch(/import \{ GateDock \} from '\.\/GateDock'/)
+    expect((appSrc.match(/<GateDock\s*\/>/g) ?? []).length).toBe(1)
   })
 })

@@ -1,88 +1,24 @@
 import { useEffect, useRef } from 'react'
 import { getEditor } from '../app/runtime'
 import { downloadJson, readTextFile } from '../io/file-transfer'
-import { useEditorUi } from '../state/editor-store'
+import { useEditorUi, setUi } from '../state/editor-store'
 import { cmd, commandEnabled } from './commands'
 import type { AppCommand } from './commands'
 import { EditorWorkspace } from './EditorWorkspace'
-import { isTextEntryTarget } from './floating/UiInputBoundary'
+import { GateDock } from './GateDock'
+import { M1Workspace } from './M1Workspace'
+import { initialShell, persistShell, readShellEnv } from './shell-mode'
+import { APP_CSS } from './theme'
+import { isTextEntryTarget } from './UiInputBoundary'
 
-const css = `
-  :root {
-    --bg: #0f1218;
-    --bg-rail: #141922;
-    --line: #232b35;
-    --line-soft: #1d242d;
-    --fg: #e3e9f0;
-    --fg-dim: #99a4b1;
-    --fg-mute: #6c7784;
-    --accent: #57c26a;
-    --btn: #1e252e;
-    --btn-hover: #29323d;
-    --btn-line: #2e3742;
-    /* 状态四色（r05 · 规格 §2.1 / REQ-060）：三色一中性，值沿用现状三色不重调色。
-       状态色一律经 token 引用（验收② grep：状态色无散落字面量）；选中 / 身份色不在此列（§2.4）。 */
-    --ok: #7bbf7b;
-    --warn: #d9a94e;
-    --err: #c0705d;
-    --mute: #8a929c;
-  }
-  * { box-sizing: border-box; }
-  html, body, #root { height: 100%; margin: 0; }
-  body { font-family: system-ui, "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--fg); font-size: 13px; }
-  button { background: var(--btn); color: var(--fg); border: 1px solid var(--btn-line); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
-  button:disabled { opacity: 0.36; cursor: default; }
-  button:hover:not(:disabled) { background: var(--btn-hover); }
-  select, input, textarea { background: #1a212a; color: var(--fg); border: 1px solid var(--btn-line); border-radius: 6px; padding: 4px 6px; font: inherit; }
-  select:focus, input:focus, textarea:focus { outline: 1px solid var(--accent); outline-offset: 0; }
-  .app { height: 100%; display: flex; flex-direction: column; }
-  .topbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: #12161d; }
-  .brand { font-weight: 700; letter-spacing: .01em; }
-  .save { color: var(--fg-mute); font-size: 12px; }
-  /* 存储降级（REQ-002 补）：内存回退必须可见，不能继续显示"已保存" */
-  .save-volatile { color: var(--warn); }
-  .spacer { flex: 1; }
-  .icon-btn { min-width: 34px; padding: 3px 8px; font-size: 15px; line-height: 1.35; }
-  .mini-btn { padding: 2px 7px; font-size: 13px; line-height: 1.3; }
-  .row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row-meta { color: var(--fg-mute); flex: none; font-size: 11px; }
-  .mode-pill { padding: 3px 12px; border-radius: 999px; font-size: 12px; }
-  .mode-pill.edit { background: #24512e; border-color: #2f6b3c; }
-  .mode-pill.inspect { background: #262d37; }
-  .workspace { flex: 1; display: flex; min-height: 0; position: relative; }
-  .statusbar { display: flex; gap: 16px; padding: 4px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-mute); background: #12161d; }
-  /* ── 可折叠区块（Section）── */
-  .panel { border-top: 1px solid var(--line-soft); }
-  .panel:first-of-type { border-top: 0; }
-  .panel-head { width: 100%; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 0; border-radius: 0; background: transparent; text-align: left; font-size: 12.5px; font-weight: 600; color: var(--fg); }
-  .panel-head:hover:not(:disabled) { background: rgba(255,255,255,0.04); }
-  .panel-head .chev { width: 11px; color: var(--fg-mute); font-size: 10px; flex: none; }
-  .panel-emoji { font-size: 14px; flex: none; }
-  .panel-title { flex: none; }
-  .panel-hint { margin-left: auto; padding-left: 8px; color: var(--fg-mute); font-weight: 400; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .panel-body { padding: 2px 10px 12px; }
-  .panel .panel { margin: 8px -10px 0; border-top: 1px solid var(--line); }
-  .rail-group { padding: 10px 10px 3px; font-size: 10.5px; letter-spacing: .1em; color: var(--fg-mute); text-transform: uppercase; }
-  .panel-body > :first-child { margin-top: 0; }
-  .field { display: block; margin: 6px 0; font-size: 12px; color: var(--fg-dim); }
-  .field > select, .field > input { width: 100%; margin-top: 2px; }
-  .note { color: var(--fg-mute); font-size: 11px; margin: 6px 0 0; line-height: 1.45; }
-  .warn { color: var(--warn); font-size: 12px; margin: 4px 0; }
-  /* ── 左栏（r05 T2）── 三段常开、不折叠（§1.2 末段 / Q4）；组标签复用 .rail-group 与右栏同构 */
-  .panel-emoji-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; font-size: 11px; color: var(--fg-dim); }
-  .panel-emoji-btn .glyph { font-size: 17px; line-height: 1; }
-  .panel-emoji-btn.on { background: rgba(87,194,106,0.16); border-color: var(--accent); color: #bdf0c6; }
-  /* ── 常显区（r05 T4 · REQ-061）：闸门卡挂这里 ⇒ AI 块折叠时它仍在（折叠只收正文） ── */
-  .panel-pinned { padding: 2px 10px 10px; }
-  /* 保存状态字（§2.2 首行）：错态 = 红字 + 可点（出口 = autosave.flush()，Q5 裁定） */
-  .save-retry { background: none; border: 0; padding: 0; color: var(--err); font-size: 12px; cursor: pointer; text-decoration: underline; }
-`
+const css = APP_CSS
 
 // UI 壳（T6 + r02 前半）：顶栏双态切换 / 新建 / 导入导出 / 撤销重做——全部具名命令（commands.ts，纪律 ①）。
 // 会话态视图（层次 / 网格 / 相机 / 双态）不进项目文件（REQ-058）。
 export function App(): JSX.Element {
   const saveState = useEditorUi((s) => s.saveState)
   const storageOk = useEditorUi((s) => s.storageOk)
+  const shell = useEditorUi((s) => s.shell)
   const mode = useEditorUi((s) => s.mode)
   const message = useEditorUi((s) => s.message)
   const nonEmpty = useEditorUi((s) => s.nonEmpty)
@@ -112,6 +48,12 @@ export function App(): JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // S8：启动按环境定初值（coarse / ≤1023 ⇒ 浮块；否则三栏）；合法的本机手动选择优先（shell-mode 读回）
+  useEffect(() => {
+    const initial = initialShell(readShellEnv())
+    if (useEditorUi.getState().shell !== initial) setUi({ shell: initial })
+  }, [])
+
   const onExport = (): void => {
     void getEditor().autosave.flush()
     // r04 T6（D4）：传输机制在 io/file-transfer；UI 只留按钮
@@ -124,6 +66,13 @@ export function App(): JSX.Element {
 
   const onImportFile = (file: File): void => {
     void readTextFile(file).then((text) => getEditor().importFile(text))
+  }
+
+  // S8：手动切壳——只改会话 store（不重建 Editor），并尽力持久化（隐私模式失败静默）
+  const changeShell = (value: string): void => {
+    const next = value === 'm1' ? 'm1' : 'floating'
+    setUi({ shell: next })
+    persistShell(next)
   }
 
   const saveLabel: Record<string, string> = {
@@ -172,6 +121,14 @@ export function App(): JSX.Element {
         >
           {mode === 'edit' ? '✏️ 编辑态' : '👁 检视态'}
         </button>
+        {/* S8 壳切换：浮块 / 三栏（手动选择本地持久化，异常回退自动初值） */}
+        <label className="shell-pick" title="壳形态：浮块（触屏/窄屏）· 三栏（桌面）">
+          壳
+          <select value={shell} aria-label="壳形态" onChange={(e) => changeShell(e.target.value)}>
+            <option value="floating">浮块</option>
+            <option value="m1">三栏</option>
+          </select>
+        </label>
         <span className="spacer" />
         {topButton(cmd.undo, '↩️', '撤销（Ctrl+Z）')}
         {topButton(cmd.redo, '↪️', '重做（Ctrl+Shift+Z / Ctrl+Y）')}
@@ -197,9 +154,10 @@ export function App(): JSX.Element {
           }}
         />
       </header>
-      {/* `D1`（design §7.2）：原「左 `.toolbar` + 右 `.rail`」三栏装配改为**工作区 + 九个悬浮方块**
-          （工具 / AI / 结构树 / 程序化 / 噪声 / 历史 / 外观 / 相机 / 层次）；顶栏与状态栏不变。 */}
-      <EditorWorkspace />
+      <GateDock />
+      {/* S8：两壳二选一渲染——浮块壳（默认/窄屏/触屏）或 M1 三栏壳；同一 Editor 实例，不重建。
+          浮块壳的装配仍是「工作区 + 九个悬浮方块」；三栏壳是 左栏 / 舞台 / 右 Dock。 */}
+      {shell === 'm1' ? <M1Workspace /> : <EditorWorkspace />}
       <footer className="statusbar">
         <span>非空块 {nonEmpty}</span>
         <span>{message}</span>

@@ -284,7 +284,7 @@ describe('R-02 · Esc / pointercancel 后无幽灵数据（模型 + 历史 + 页
 
 // ── `D1`（P4 · design §7.2 ④ / §4 `F-03`）：**活动笔进入 UI 覆盖区 = 中断** ──
 // 覆盖层在画布矩形**内**（悬浮方块压在视口上），所以"坐标是否出界"看不出差别；判据必须是
-// `ui/floating/UiInputBoundary` 的边界命中。本件用垫片 DOM 给 `elementFromPoint` 装一个覆盖区
+// `ui/UiInputBoundary` 的边界命中。本件用垫片 DOM 给 `elementFromPoint` 装一个覆盖区
 // （无头垫片默认没有该方法 ⇒ 产品侧显式退化为 false，不新增隐式分支）。
 describe('D1 · 活动笔进入 UI 覆盖区即取消（覆盖层压在画布矩形内）', () => {
   const installOverlay = (): (() => void) => {

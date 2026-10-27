@@ -1,7 +1,7 @@
 import { cmd, commandEnabled, INSPECT_READONLY, pickPalette, setBrushAxis } from './commands'
 import { useEditorUi } from '../state/editor-store'
 import { ColorPanel } from './ColorPanel'
-import { FloatingTile } from './floating/FloatingTile'
+import { PanelFrame } from './PanelFrame'
 
 // 左栏：工具（放置 / 擦除 / 上色 = 笔刷动作，REQ-055）+ 笔刷尺寸（长宽高 · 每轴 1–8）+ 替换开关 +
 // 彩色调色板（REQ-027：≥12 种方块 · ≥8 色）。
@@ -45,7 +45,7 @@ export function ToolPanel(): JSX.Element {
   )
 
   return (
-    <FloatingTile id="tools" summary={summary}>
+    <PanelFrame id="tools" summary={summary}>
       <div className="rail-group">工具（笔刷动作）</div>
       <div style={{ display: 'flex', gap: 6 }}>
         {tools.map((id) => {
@@ -129,15 +129,15 @@ export function ToolPanel(): JSX.Element {
           检视态：左键拖动 = 旋转。
         </p>
       </details>
-    </FloatingTile>
+    </PanelFrame>
   )
 }
 
 // 右栏上半：外观（`REQ-027` color-only：无贴图源 / 无材质 / 无第二套体系可切）。
 export function StylePanel(): JSX.Element {
   return (
-    <FloatingTile id="style" summary="彩色">
+    <PanelFrame id="style" summary="彩色">
       <p className="note">当前为彩色单一体系（color-only）：无贴图源、无材质、无第二套外观可切。</p>
-    </FloatingTile>
+    </PanelFrame>
   )
 }

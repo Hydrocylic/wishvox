@@ -181,6 +181,11 @@ export class VoxelView implements EditorRenderer {
     this.rig.setCameraParams(p)
   }
 
+  /** S9b：恢复完整机位（切壳重挂时用） */
+  setCameraPose(pose: { position: [number, number, number]; target: [number, number, number] }): void {
+    this.rig.setCameraPose(pose)
+  }
+
   /** F5：双态的交互面——检视态同时收掉笔刷预览 */
   setInteractionMode(mode: InteractionMode): void {
     this.rig.setInteractionMode(mode)
