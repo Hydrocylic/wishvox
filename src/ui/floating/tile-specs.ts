@@ -1,7 +1,7 @@
-// `D1`（design §7.2 · 2026-10-16）：九个悬浮方块的**静态表**——ID、标题、图标、首屏展开态的唯一出处。
+// `D1`（design §7.2 · 2026-10-16）：十个悬浮方块的**静态表**——ID、标题、图标、首屏展开态的唯一出处。
 // 这里是"仅结构"的文件：不含几何（几何在 tile-layout.ts）、不含业务（业务在各自面板的 `*Content`）。
 // 为什么把 ID 单独定义：`TileId` 被布局、外壳、装配三处引用，放在外壳里会形成"外壳 ↔ 布局"互相 import。
-export type TileId = 'tools' | 'ai' | 'parts' | 'ops' | 'noise' | 'history' | 'style' | 'camera' | 'layers'
+export type TileId = 'tools' | 'ai' | 'pattern' | 'parts' | 'ops' | 'noise' | 'history' | 'style' | 'camera' | 'layers'
 
 export interface TileSpec {
   readonly id: TileId
@@ -16,6 +16,7 @@ export interface TileSpec {
 export const TILE_SPECS: readonly TileSpec[] = [
   { id: 'tools', title: '工具与颜色', icon: '🧰', defaultOpen: true },
   { id: 'ai', title: 'AI 编辑', icon: '🤖', defaultOpen: true },
+  { id: 'pattern', title: '图纸 → 方块', icon: '🖼', defaultOpen: false },
   { id: 'parts', title: '结构树', icon: '🌳', defaultOpen: false },
   { id: 'ops', title: '程序化操作', icon: '⚙️', defaultOpen: false },
   { id: 'noise', title: '噪声', icon: '🎲', defaultOpen: false },
@@ -33,7 +34,7 @@ export function tileSpec(id: TileId): TileSpec {
   return s
 }
 
-/** 首屏展开集合（`D1` ⑤：九块都在，只是折叠态不同） */
+/** 首屏展开集合（`D1` ⑤：十块都在，只是折叠态不同） */
 export function defaultOpenMap(): Record<TileId, boolean> {
   return Object.fromEntries(TILE_SPECS.map((s) => [s.id, s.defaultOpen])) as Record<TileId, boolean>
 }

@@ -128,7 +128,7 @@ describe('IO-L3 · 带色号文字的图纸端到端（格线通道 + 白豆/空
       }
       return WHITE
     })
-    const rec = recognizePattern(img, { mergeTolerance: 18 })
+    const rec = recognizePattern(img, { mergeTolerance: 18, backgroundToEmpty: true })
     expect(rec.ok).toBe(true)
     if (!rec.ok) return
     expect([rec.geometry.cols, rec.geometry.rows]).toEqual([cols, rows])

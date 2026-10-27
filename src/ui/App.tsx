@@ -7,7 +7,7 @@ import type { AppCommand } from './commands'
 import { EditorWorkspace } from './EditorWorkspace'
 import { GateDock } from './GateDock'
 import { M1Workspace } from './M1Workspace'
-import { initialShell, persistShell, readShellEnv } from './shell-mode'
+import { persistShell } from './shell-mode'
 import { APP_CSS } from './theme'
 import { isTextEntryTarget } from './UiInputBoundary'
 
@@ -46,12 +46,6 @@ export function App(): JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  // S8：启动按环境定初值（coarse / ≤1023 ⇒ 浮块；否则三栏）；合法的本机手动选择优先（shell-mode 读回）
-  useEffect(() => {
-    const initial = initialShell(readShellEnv())
-    if (useEditorUi.getState().shell !== initial) setUi({ shell: initial })
   }, [])
 
   const onExport = (): void => {

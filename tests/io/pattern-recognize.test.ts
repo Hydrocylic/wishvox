@@ -79,7 +79,7 @@ describe('IO-P1 · 自动网格检测（彩色格子图纸）', () => {
   it('留白色格子 = 空位（null）：不摆块，也不进色板', () => {
     const colors = ['#c0392b', null, '#3b6ea5', null]
     const img = chart({ cols: 2, rows: 2, cell: 12, margin: 12, colors })
-    const result = recognizePattern(img)
+    const result = recognizePattern(img, { backgroundToEmpty: true })
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.grid.cells).toEqual(['#c0392b', null, '#3b6ea5', null])

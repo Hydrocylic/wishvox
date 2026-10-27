@@ -1,6 +1,6 @@
-// `D1`（architect §5.2 `FloatingTiles` / `useTileLayout`）：**九个固定实例的装配** + 视图量测。
+// `D1`（architect §5.2 `FloatingTiles` / `useTileLayout`）：**十个固定实例的装配** + 视图量测。
 // 三条纪律：
-//   ① 九块**常驻挂载**（业务适配器与草稿的拥有者不随开关销毁）：这里只切 `openById`，
+//   ① 十块**常驻挂载**（业务适配器与草稿的拥有者不随开关销毁）：这里只切 `openById`，
 //      面板组件始终在树上，收起仅让外壳不渲染正文；
 //   ② 开关态**只在 React 会话里**：不进 Editor、不进项目文件、不进撤销日志、不进 localStorage（`D1` ②⑦）；
 //   ③ 量测只读 DOM 几何（工作区矩形 + HUD 矩形），不读相机 / 模型 / 存档（architect §5.4）。
@@ -13,6 +13,7 @@ import { LayerPanel } from '../LayerPanel'
 import { NoisePanel } from '../NoisePanel'
 import { OpsPanel } from '../OpsPanel'
 import { PartTree } from '../PartTree'
+import { PatternImport } from '../PatternImport'
 import { StylePanel, ToolPanel } from '../Panels'
 import { computeTileLayout } from './tile-layout'
 import type { TileLayoutResult } from './tile-layout'
@@ -52,7 +53,7 @@ export function useTileLayout(hostRef: RefObject<HTMLElement>, hudRef: RefObject
   return useMemo(() => computeTileLayout(m), [m])
 }
 
-/** 九块装配：持 `openById`（唯一开关态正本）并把布局送进 context（外壳按 ID 自取锚点） */
+/** 十块装配：持 `openById`（唯一开关态正本）并把布局送进 context（外壳按 ID 自取锚点） */
 export function FloatingTiles(props: { readonly layout: TileLayoutResult }): JSX.Element {
   const [openById, setOpenById] = useState<Record<TileId, boolean>>(() => defaultOpenMap())
   const host = useMemo<TileHost>(
@@ -64,11 +65,12 @@ export function FloatingTiles(props: { readonly layout: TileLayoutResult }): JSX
     }),
     [openById, props.layout],
   )
-  // 九块都在这里、各自只出现一次（`D1` ⑤：展开/收起不增删方块；AI 与层次各持独立开关）
+  // 十块都在这里、各自只出现一次（`D1` ⑤：展开/收起不增删方块；AI 与层次各持独立开关）
   return (
     <TileHostContext.Provider value={host}>
       <ToolPanel />
       <AiPanel />
+      <PatternImport />
       <PartTree />
       <OpsPanel />
       <NoisePanel />

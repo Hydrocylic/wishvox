@@ -70,6 +70,7 @@ export function recognizePattern(img: RgbaImage, opts: RecognizeOptions = {}): P
     palette: sampled.palette,
     backgroundColor: background === null ? null : `rgb(${background.r}, ${background.g}, ${background.b})`,
     emptyCells: sampled.emptyCells,
+    emptySources: sampled.emptySources,
     warnings: [...detected.warnings, ...sampled.warnings],
   }
 }

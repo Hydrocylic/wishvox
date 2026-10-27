@@ -14,6 +14,9 @@ export function ViewportHud(): JSX.Element {
   return (
     <div
       style={{
+        // 6 行（bounds 3 + preview 1 + 提示 1 + warn 1）及三段间距，避免量测高度随悬停跳动。
+        minHeight: Math.ceil(6 * 12 * 1.7 + 3 * 4 + 12 + 2),
+        boxSizing: 'border-box',
         padding: '6px 10px',
         borderRadius: 6,
         background: 'rgba(255,255,255,0.88)',

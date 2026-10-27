@@ -85,7 +85,7 @@ export interface RecognizeOptions {
   }
   /** 水平镜像：图纸标注「镜像」或与实物左右相反时勾选 */
   readonly mirrorX?: boolean
-  /** 与背景同色的格子算空位（默认 true） */
+  /** 与背景同色的格子算空位（默认 false；白色豆应关闭） */
   readonly backgroundToEmpty?: boolean
   /** 全透明格子算空位（默认 true） */
   readonly alphaToEmpty?: boolean
@@ -100,6 +100,7 @@ export type PatternRecognizeResult =
       readonly grid: PatternGrid
       readonly palette: ReadonlyArray<PatternColorStat>
       readonly backgroundColor: string | null
+      readonly emptySources: { readonly unsampled: number; readonly paperWhite: number; readonly backgroundMatch: number }
       readonly emptyCells: number
       readonly warnings: ReadonlyArray<string>
     }

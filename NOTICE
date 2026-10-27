@@ -1,0 +1,31 @@
+Wishvox — third-party contribution notice
+==========================================
+
+This product includes code and design adapted from pull request #1 of the public
+repository Hydrocylic/wishvox, "feat: bead-chart pattern import + three-column UI shell",
+authored by Redbean520 (https://github.com/Redbean520).
+
+Source:     https://github.com/Hydrocylic/wishvox/pull/1
+Head:       026c845fb3fd54ddc39c4553917d53247091372f
+Received:   2026-10-24
+
+Scope received (partial selection, not the whole pull request)
+--------------------------------------------------------------
+- local bead-chart recognition kernel: src/io/pattern/**, tests/io/pattern-*
+- AI wire-shape extraction and empty-tools omission: src/ai/wire.ts and provider hunks
+- Vite watcher ignore for atomic temp dirs: vite.config.ts
+- showcase URL fallback outside Vite: src/io/showcase.ts
+- IndexedDB open timeout with in-memory fallback: src/io/project-store.ts
+  (adapted locally: late connections are closed, and the UI shows a visible
+  "this session is not persisted" notice; upstream had no such notice)
+- one-patch bead-chart application: src/edit/pattern-apply.ts
+- three-column shell layout, design tokens and dock: src/ui/{Pane,theme,shell/**}
+  (adapted locally: the floating-tile shell, the R-14 keyboard guard and the
+  gate read-back harness are kept; the 3D viewport stays white per REQ-048)
+- local bead-chart import panel: src/ui/PatternImport.tsx
+  (the optional AI-vision channel is deferred to v1.1 and not included)
+
+Licensed under the Apache License, Version 2.0 — see LICENSE. Local modifications are
+recorded in the merge log under work/pr-merge/. This notice records the upstream
+authorship and license as received; it does not assert copyright on behalf of the
+original author, nor transfer any rights.

@@ -33,12 +33,12 @@ const intersects = (a: { left: number; top: number; right: number; bottom: numbe
   a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
 
 describe('D1-A 九块静态拓扑（design §7.2 清单与方向）', () => {
-  it('恰好九块、ID 唯一、含左工具栏 / AI / 层次卡', () => {
-    expect(IDS).toHaveLength(9)
-    expect(new Set(IDS).size).toBe(9)
+  it('恰好十块、ID 唯一、含左工具栏 / AI / 层次卡', () => {
+    expect(IDS).toHaveLength(10)
+    expect(new Set(IDS).size).toBe(10)
     expect(IDS).toEqual(expect.arrayContaining(['tools', 'ai', 'parts', 'ops', 'noise', 'history', 'style', 'camera', 'layers']))
     // 右列顺序（design：结构树 → 程序化 → 噪声 → 历史 → 外观 → 相机）
-    expect(RIGHT_COLUMN).toEqual(['parts', 'ops', 'noise', 'history', 'style', 'camera'])
+    expect(RIGHT_COLUMN).toEqual(['parts', 'ops', 'noise', 'history', 'style', 'camera', 'pattern'])
     expect(defaultOpenMap().tools).toBe(true)
     expect(defaultOpenMap().ai).toBe(true)
     expect(defaultOpenMap().layers).toBe(true)
@@ -106,7 +106,7 @@ describe('D1-A 九块静态拓扑（design §7.2 清单与方向）', () => {
     expect(tiny.ok).toBe(false)
     expect(tiny.required).toEqual(MIN_WORKSPACE)
     expect(tiny.note).toContain('最小')
-    expect(Object.keys(tiny.slots)).toHaveLength(9)
+    expect(Object.keys(tiny.slots)).toHaveLength(10)
     expect(computeTileLayout({ width: 1200, height: 800, hudHeight: 90 }).ok).toBe(true)
   })
 

@@ -10,9 +10,10 @@ Wishvox runs entirely in the browser. There is no backend, no account and no clo
 
 ## What it is
 
-- **Input** — a sentence in Chinese or English, or a saved Wishvox project (`.json`). Import of external voxel/blueprint formats is a later direction, not part of v1.0.0.
+- **Input** — a sentence in Chinese or English, a saved Wishvox project (`.json`), or a bead-chart image (PNG / JPEG / WebP) recognized **locally** in the browser (nothing is uploaded). Other external voxel/blueprint formats remain a later direction.
 - **How AI edits** — the model does **not** stream a voxel array. It emits one instruction per line: a program op plus its parameters. The app applies it through the editor's model API, not a private generation channel — a person can trigger the same operations by hand.
 - **Output** — a voxel building you can keep editing, undo, save and export as a project file.
+- **Two UI shells** — a three-pane desktop layout (left rail / stage / right dock) and a floating-tile layout for touch and narrow screens. Switch explicitly in the top bar; the choice is remembered locally.
 - **Why it is not "generate once"** — the AI never gets a private write path. It uses the editor's operations, gates and history, so its result can be inspected, partially undone, or reproduced.
 
 The same principle drives the whole product: *the model never gains a capability a person cannot exercise.* Every operation the AI can invoke, you can also perform by hand.

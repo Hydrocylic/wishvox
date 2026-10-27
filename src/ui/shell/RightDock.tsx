@@ -9,6 +9,7 @@ import { HistoryPanel } from '../HistoryPanel'
 import { LayerPanel } from '../LayerPanel'
 import { NoisePanel } from '../NoisePanel'
 import { OpsPanel } from '../OpsPanel'
+import { PatternImport } from '../PatternImport'
 import { StylePanel } from '../Panels'
 import { PartTree } from '../PartTree'
 import { UI_BOUNDARY_ATTR } from '../UiInputBoundary'
@@ -24,6 +25,7 @@ export function RightDock(): JSX.Element {
   const [active, setActive] = useState('ai')
   const tabs: DockTab[] = [
     { id: 'ai', label: 'AI', content: <AiPanel /> },
+    { id: 'pattern', label: '图纸', content: <PatternImport /> },
     { id: 'parts', label: '结构', content: <PartTree /> },
     { id: 'ops', label: '操作', content: <OpsPanel /> },
     { id: 'noise', label: '噪声', content: <NoisePanel /> },

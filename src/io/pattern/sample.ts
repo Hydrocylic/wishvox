@@ -6,7 +6,7 @@
 // ③ 带色号文字的图纸（拼豆软件导出）：文字压在格中央，取**四角小方块**的众数色 = 底色，
 //    文字色被绕开（这是"取中位色"做不到的：17px 的格子里两字符文字能盖住中心一大半）；
 // ④ 白底 + 深色文字的格子 = 白色豆（`H2` 之类）：填充色是白的、但**中心有文字** ⇒ 不算空位；
-//    纯白且无文字的格子才是空位。这条区分让"白豆"与"空白纸"不再混为一谈。
+//    纯白无文字仅是背景候选；只有显式 backgroundToEmpty=true 才置空，默认保留白豆。
 //
 // 近色归并 = 单遍 leader 聚类（按出现次数从多到少当中心，最大通道差 ≤ tolerance 归入）：
 // 图纸色板常见的"同一色号因压缩略有偏差"由此收敛，但不会把两种明显不同的颜色并掉。
@@ -120,7 +120,7 @@ function sampleCell(img: RgbaImage, x0: number, y0: number, x1: number, y1: numb
   const spread = Math.max(fill.r, fill.g, fill.b) - Math.min(fill.r, fill.g, fill.b)
   const nearWhite = lum >= PAPER_LUM && spread <= PAPER_SPREAD
   if (nearWhite) {
-    return inkRatio >= TEXT_RATIO ? { hex: '#ffffff', text: true, uniformity } : { hex: null, text: false, uniformity }
+    return { hex: rgbToHex(fill), text: inkRatio >= TEXT_RATIO, uniformity }
   }
   return { hex: rgbToHex(fill), text: inkRatio >= TEXT_RATIO, uniformity }
 }
@@ -205,8 +205,8 @@ function sampleCellWithPalette(
     return lum >= 240 && spread <= 14
   }
   // 空白：纸白票明显占优且没有文字
-  if (paperVotes > winnerVotes && darkRatio < TEXT_RATIO) return { hex: null, text: false, uniformity: paperVotes / total }
-  if (paperVotes >= total * 0.6 && darkRatio < TEXT_RATIO) return { hex: null, text: false, uniformity: paperVotes / total }
+  if (paperVotes > winnerVotes && darkRatio < TEXT_RATIO) return { hex: '#ffffff', text: false, uniformity: paperVotes / total }
+  if (paperVotes >= total * 0.6 && darkRatio < TEXT_RATIO) return { hex: '#ffffff', text: false, uniformity: paperVotes / total }
   const chosen = palette[winner]!
   // 白底 + 深色文字 = 白豆：选一个最接近白的色卡颜色（找不到就用纯白）
   if (paperVotes >= winnerVotes && darkRatio >= TEXT_RATIO) {
@@ -224,7 +224,7 @@ function sampleCellWithPalette(
     return { hex: bestWhite ?? '#ffffff', text: true, uniformity: paperVotes / total }
   }
   if (whiteish(paletteRgb[winner]!)) {
-    return darkRatio >= TEXT_RATIO ? { hex: chosen, text: true, uniformity: winnerVotes / total } : { hex: null, text: false, uniformity: winnerVotes / total }
+    return { hex: chosen, text: darkRatio >= TEXT_RATIO, uniformity: winnerVotes / total }
   }
   return { hex: chosen, text: darkRatio >= TEXT_RATIO, uniformity: winnerVotes / total }
 }
@@ -254,6 +254,7 @@ function mergePaletteAndEmpirical(
 export interface SampleOutcome {
   readonly grid: PatternGrid
   readonly palette: ReadonlyArray<PatternColorStat>
+  readonly emptySources: { readonly unsampled: number; readonly paperWhite: number; readonly backgroundMatch: number }
   readonly emptyCells: number
   /** 平均格内一致性（0–1） */
   readonly uniformity: number
@@ -329,6 +330,7 @@ export function sampleGrid(
   const legendRgb = legendPalette === null ? null : parsePaletteRgb(legendPalette)
   const samples: CellSample[] = []
   const counts = new Map<string, number>()
+  const emptySources = { unsampled: 0, paperWhite: 0, backgroundMatch: 0 }
   let emptyCells = 0
   let whiteBeads = 0
   let uniformSum = 0
@@ -343,9 +345,16 @@ export function sampleGrid(
       uniformSum += cell.uniformity
       let hex = cell.hex
       if (hex !== null && cell.text && hex === '#ffffff') whiteBeads++
-      if (hex !== null && opts.backgroundToEmpty !== false && opts.background !== null && !cell.text) {
+      if (hex === null) emptySources.unsampled++
+      if (hex !== null && opts.backgroundToEmpty === true && !cell.text) {
         const rgb = parseHexRgb(hex)
-        if (rgb !== null && channelDistance(rgb, opts.background) <= 22) hex = null
+        if (rgb !== null && isPaperPixel(rgb)) {
+          emptySources.paperWhite++
+          hex = null
+        } else if (rgb !== null && opts.background !== null && channelDistance(rgb, opts.background) <= 22) {
+          emptySources.backgroundMatch++
+          hex = null
+        }
       }
       if (hex === null) emptyCells++
       else counts.set(hex, (counts.get(hex) ?? 0) + 1)
@@ -359,13 +368,15 @@ export function sampleGrid(
   for (const hex of cells) if (hex !== null) palette.set(hex, (palette.get(hex) ?? 0) + 1)
   const uniformity = samples.length === 0 ? 0 : uniformSum / samples.length
   const warnings: string[] = []
+  if (opts.backgroundToEmpty === true) warnings.push(`${emptySources.paperWhite + emptySources.backgroundMatch} 格按背景置空（白色豆请关闭）`)
   if (uniformity < 0.62) warnings.push('格内颜色不一致（可能是符号/色号图纸或拍照倾斜）：参考 AI 识别结果，或手动核对行列')
-  if (whiteBeads > 0) warnings.push(`检测到 ${whiteBeads} 格"白底 + 色号"的白色豆：按白豆处理（纯白无文字的格子才是空位）`)
+  if (whiteBeads > 0) warnings.push(`检测到 ${whiteBeads} 格"白底 + 色号"的白色豆：按白豆处理（纯白无文字仅在开启背景置空时为空位）`)
   if (palette.size > 48) warnings.push(`归并后仍有 ${palette.size} 种颜色：可以调高"颜色归并"阈值再试`)
   return {
     grid: { cols, rows, cells },
     palette: [...palette.entries()].map(([hex, count]) => ({ hex, count })).sort((a, b) => b.count - a.count || a.hex.localeCompare(b.hex)),
     emptyCells,
+    emptySources,
     uniformity,
     warnings,
   }

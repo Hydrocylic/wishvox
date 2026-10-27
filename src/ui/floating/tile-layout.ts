@@ -12,7 +12,7 @@ export const TILE_SIZE = 34
 export const TILE_GAP = 6
 export const TILE_PAD = 8
 /** 右列固定六块的顺序（design §7.2：结构树 → 程序化 → 噪声 → 历史 → 外观 → 相机） */
-export const RIGHT_COLUMN: readonly TileId[] = ['parts', 'ops', 'noise', 'history', 'style', 'camera']
+export const RIGHT_COLUMN: readonly TileId[] = ['parts', 'ops', 'noise', 'history', 'style', 'camera', 'pattern']
 /** 内容体期望尺寸上限（**预算封顶**，不是"已确认的最小分辨率"）：超出即内部滚动（architect §5.4-3） */
 const CONTENT_MAX_W = 336
 const CONTENT_MAX_H = 420
@@ -123,6 +123,7 @@ export function computeTileLayout(input: TileLayoutInput): TileLayoutResult {
     history: slot('history', columnStart + 3 * step, 'left', 'right', regionTop, columnBodyHeight),
     style: slot('style', columnStart + 4 * step, 'left', 'right', regionTop, columnBodyHeight),
     camera: slot('camera', columnStart + 5 * step, 'left', 'right', regionTop, columnBodyHeight),
+    pattern: slot('pattern', columnStart + 6 * step, 'left', 'right', regionTop, columnBodyHeight),
   }
 
   const ok = W >= MIN_WORKSPACE.width && H >= MIN_WORKSPACE.height

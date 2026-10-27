@@ -174,13 +174,13 @@ async function run(): Promise<void> {
     const activeTab = stage.querySelector('[role="tab"][aria-selected="true"]')
     check(
       '⑥-1 三栏壳（M1）+ pendingGate',
-      `dock 1 份 · 高>0 · 4 按钮 · 6 标签 · AI 选中带 ⚠ · store.pendingGate=${m1GateId}`,
+      `dock 1 份 · 高>0 · 4 按钮 · 7 标签 · AI 选中带 ⚠ · store.pendingGate=${m1GateId}`,
       JSON.stringify({ ...r, activeTab: activeTab?.textContent ?? null }),
       r.dockExists === true &&
         r.dockHeightPx > 0 &&
         r.dockButtons === 4 &&
         r.dockCount === 1 &&
-        stage.querySelectorAll('[role="tab"]').length === 6 &&
+        stage.querySelectorAll('[role="tab"]').length === 7 &&
         activeTab !== null &&
         (activeTab.textContent ?? '').startsWith('AI') &&
         stage.querySelector('.tab-badge') !== null &&

@@ -12,3 +12,8 @@ GateBroker，"状态即日志事件"）· `provider.ts`（OpenAI 兼容流式 + 
 - **不做什么**：不 import `ui/`（structure 断言④）；不装配（AgentSession 单例在 `app/`）；
   对账规则本体在 `rules/`（本层只是消费方）。
 - **依赖**：`core` · `rules` · `edit`（Editor 类型与模型级 API）· `state`（读面选中态）。
+
+## 视觉通道（v1.1）
+
+图纸导入的 **AI 视觉识别**（`pattern-vision.ts`）押后到 v1.1：本版只提供**本地**逐格识别，
+不上传图片、不读视觉模型设置、不新增 `AiSettings` 字段。

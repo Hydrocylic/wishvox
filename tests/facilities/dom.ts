@@ -170,8 +170,16 @@ export class ShimElement {
     if (rect.height !== undefined) this.rect.height = rect.height
   }
 
-  getContext(): Record<string, unknown> {
+  getContext(kind?: string): Record<string, unknown> {
+    // S10：图纸预览用 2D 上下文画格子；其余上下文维持旧行为（空对象，供 three 探测）
+    if (kind === '2d') return this.ctx2d as unknown as Record<string, unknown>
     return {}
+  }
+
+  private readonly ctx2d = {
+    fillStyle: '',
+    clearRect: (): void => {},
+    fillRect: (): void => {},
   }
 
   setPointerCapture(pointerId: number): void {
@@ -224,6 +232,8 @@ export class ShimDocument extends ShimElement {
     const el = tag === 'canvas' ? new ShimCanvas() : new ShimElement()
     el.ownerDocument = this
     el.tagName = tag.toUpperCase()
+    // S10：React 对 `<select>` 会读 `node.options.length` 做受控同步；垫片补一个空集合即可
+    if (tag === 'select') (el as unknown as { options: unknown[] }).options = []
     return el
   }
 

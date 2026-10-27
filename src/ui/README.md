@@ -8,3 +8,12 @@
 - **依据**：产品设计单 §五 界面与信息架构 · §六 交互规格（规格表先行，状态机落地在 `r05`）。
 - **`r04` 结构重整**：不再含装配与 store——Editor 在 `edit/`、两个 store 在 `state/`、组合根在 `app/`；
   本层文件经 `getEditor()` / `getAiSession()` 服务定位（全图唯一上行边 `ui → app`，Q2 已裁）。
+
+## 两套壳（S7 / S8）
+
+- `EditorWorkspace` = **浮块壳**（触摸 / 窄屏 / 默认回退）：悬浮方块 + 布局量测，行为与 r05 一致。
+- `M1Workspace` = **三栏壳**（桌面）：左栏 / 舞台 / 右 Dock；面板经 `PanelFrame` 落成 `Pane`，
+  两壳共用同一份面板内容（不双挂）。
+- 顶栏「壳」下拉显式切换；`shell-mode.ts` 负责初值（coarse / ≤1023 ⇒ 浮块）与本地持久化。
+  切换不重建 Editor；相机机位随 `cameraPanel.position` 恢复。
+- 闸门卡由壳级 `GateDock` 挂一次（`REQ-061`），两壳都常显。
